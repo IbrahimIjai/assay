@@ -188,7 +188,14 @@ async function main() {
       x: F.toObject(x).toString(),
       y: F.toObject(y).toString()
     })),
-    locallyVerified: true
+    locallyVerified: true,
+    calldata: {
+      asset: `0x${assetField.toString(16).padStart(64, '0')}`,
+      a,
+      b,
+      c,
+      inputs
+    }
   }
 
   if (process.argv.includes('--submit')) {

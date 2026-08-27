@@ -339,7 +339,7 @@
                 Agent result
               </div>
               <div class="mt-2 font-display text-[26px] leading-none text-highlighted">
-                {{ currentStage >= 6 ? (submitted ? 'Proof accepted on-chain' : 'Proof verified locally') : 'Not generated' }}
+                {{ proofResultLabel }}
               </div>
               <div
                 v-if="currentStage >= 6 && coverageKnown && !isCovered"
@@ -355,7 +355,14 @@
               {{ agentError }}
             </p>
             <UButton
-              v-if="currentStage >= 6"
+              v-if="proofSummary && !submitted"
+              class="mt-4"
+              :label="isCovered ? 'Submit healthy proof on-chain' : 'Submit failed proof on-chain'"
+              :loading="submitting"
+              @click="submitProofOnChain"
+            />
+            <UButton
+              v-if="submitted"
               class="mt-4"
               :to="`/issuer/mint?state=${isCovered ? 'healthy' : 'failed'}`"
               :label="isCovered ? 'Continue to mint' : 'Try blocked mint'"
@@ -370,7 +377,8 @@
 
 <script setup lang="ts">
 import { formatUnits } from 'viem'
-import { agentApiUrl } from '~/utils/contracts'
+import { agentApiUrl, contracts } from '~/utils/contracts'
+import { reserveRegistryAbi } from '~/utils/web3'
 
 const stages = [
   { label: 'Documents received', detail: 'Three custody statements are ingested and indexed.' },
@@ -393,6 +401,13 @@ interface ProofSummary {
   locallyVerified: boolean
   transactionHash?: `0x${string}`
   blockNumber?: string
+  calldata: {
+    asset: `0x${string}`
+    a: [string, string]
+    b: [[string, string], [string, string]]
+    c: [string, string]
+    inputs: [string, string, string, string, string]
+  }
 }
 
 interface ProofResponse {
@@ -405,12 +420,14 @@ const scenario = ref<Scenario>('healthy')
 const currentStage = ref(-1)
 const running = ref(false)
 const submitted = ref(false)
+const submitting = ref(false)
 const agentError = ref('')
 const uploadInput = ref<HTMLInputElement | null>(null)
 const uploadedFiles = ref<File[]>([])
 const uploadedMode = ref(false)
 const uploadValidationError = ref('')
 const proofSummary = ref<ProofSummary | null>(null)
+const { ensureWallet, waitForReceipt, writeContract } = useAssayWallet()
 
 const documents = computed(() => uploadedMode.value
   ? uploadedFiles.value.map((file, index) => ({
@@ -461,6 +478,11 @@ const submissionLabel = computed(() => {
   if (currentStage.value < 5) return 'Pending'
   if (proofSummary.value?.transactionHash) return `${proofSummary.value.transactionHash.slice(0, 10)}…`
   return proofSummary.value?.locallyVerified ? 'Verified locally' : 'Generating'
+})
+const proofResultLabel = computed(() => {
+  if (!proofSummary.value && !submitted.value) return 'Not generated'
+  if (submitted.value) return 'Proof accepted on-chain'
+  return 'Proof verified locally — wallet submission required'
 })
 const custodianRootLabel = computed(() => proofSummary.value
   ? `${proofSummary.value.custodianRoot.slice(0, 8)}…${proofSummary.value.custodianRoot.slice(-6)}`
@@ -525,7 +547,35 @@ async function finishProof(request: Promise<ProofResponse>) {
   proofSummary.value = response.proof
   scenario.value = response.proof.covered ? 'healthy' : 'failed'
   submitted.value = response.submitted
-  currentStage.value = stages.length - 1
+  currentStage.value = response.submitted ? stages.length - 1 : stages.length - 2
+}
+
+async function submitProofOnChain() {
+  if (!proofSummary.value || submitted.value || submitting.value) return
+  submitting.value = true
+  agentError.value = ''
+  try {
+    await ensureWallet()
+    const calldata = proofSummary.value.calldata
+    const a = calldata.a.map(BigInt) as [bigint, bigint]
+    const b = calldata.b.map(row => row.map(BigInt) as [bigint, bigint]) as [[bigint, bigint], [bigint, bigint]]
+    const c = calldata.c.map(BigInt) as [bigint, bigint]
+    const inputs = calldata.inputs.map(BigInt) as [bigint, bigint, bigint, bigint, bigint]
+    const hash = await writeContract({
+      address: contracts.reserveRegistry,
+      abi: reserveRegistryAbi,
+      functionName: 'submitProof',
+      args: [calldata.asset, a, b, c, inputs]
+    })
+    await waitForReceipt(hash)
+    proofSummary.value.transactionHash = hash
+    submitted.value = true
+    currentStage.value = stages.length - 1
+  } catch (error) {
+    agentError.value = error instanceof Error ? error.message : 'The wallet could not submit the reserve proof.'
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function runUploadedProof() {

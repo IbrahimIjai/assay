@@ -21,7 +21,8 @@ export const reserveRegistryAbi = parseAbi([
   'function getLatest(bytes32 asset) view returns ((bool covered,uint64 asOf,uint256 supplyAtProof,bytes32 proofHash))',
   'function isFresh(bytes32 asset) view returns (bool)',
   'function coverageStatus(bytes32 asset) view returns (uint8)',
-  'function proofCount(bytes32 asset) view returns (uint256)'
+  'function proofCount(bytes32 asset) view returns (uint256)',
+  'function submitProof(bytes32 asset,uint256[2] a,uint256[2][2] b,uint256[2] c,uint256[5] publicInputs)'
 ])
 
 export const tokenAbi = parseAbi([

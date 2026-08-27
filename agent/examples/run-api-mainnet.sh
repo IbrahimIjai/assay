@@ -15,7 +15,9 @@ export ASSAY_AGENT_ROOT="$AGENT_ROOT"
 export ASSAY_CONTRACTS_DIR="$CONTRACTS_ROOT"
 export HASHKEY_RPC_URL="https://mainnet.hsk.xyz"
 export RESERVE_REGISTRY_ADDRESS="0xBe9ec79854e459F38E0B868A0c3429AAbf6784b2"
-export ASSAY_ENABLE_SUBMISSION="true"
+# Proofs are submitted by the connected browser wallet by default. Set this to
+# true explicitly only when server-side signing is intentional.
+export ASSAY_ENABLE_SUBMISSION="${ASSAY_ENABLE_SUBMISSION:-false}"
 export ASSAY_API_ADDR="127.0.0.1:3001"
 
 cd "$AGENT_ROOT"
