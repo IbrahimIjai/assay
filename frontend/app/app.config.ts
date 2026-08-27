@@ -1,13 +1,11 @@
 export default defineAppConfig({
   ui: {
     /*
-      Every colour slot maps to a palette that actually exists in main.css.
-      `primary` is ink, not a brand hue — the only saturated colour in the
-      product is coverage state, so a coloured button would compete with the
-      one signal that matters.
+      The primary brand/action colour uses Tailwind's orange palette. Semantic
+      proof states keep their dedicated custom palettes from main.css.
     */
     colors: {
-      primary: 'ink',
+      primary: 'orange',
       secondary: 'ink',
       neutral: 'ink',
       success: 'covered',

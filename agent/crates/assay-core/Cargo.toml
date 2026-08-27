@@ -1,0 +1,11 @@
+[package]
+name = "assay-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+sha2.workspace = true
+uuid.workspace = true

@@ -1,0 +1,17 @@
+[package]
+name = "assay-agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+assay-core = { path = "../assay-core" }
+assay-llm = { path = "../assay-llm" }
+async-trait.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+pdf-extract = "0.7"

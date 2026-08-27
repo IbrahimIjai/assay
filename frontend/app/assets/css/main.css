@@ -6,10 +6,8 @@
 
   Structural DNA is borrowed from serviceblocks.biz — oversized display type on
   a near-white ground, chip tags, a solid stat band, near-black contrast
-  sections, generous radii. The palette is not: an agency site can spend colour
-  freely, a proving system cannot. Here colour carries exactly one meaning —
-  coverage state — and everything else is a neutral ink ramp. If something on
-  screen is green, orange or red, it is telling you about a proof.
+  sections, generous radii. Orange is the primary brand/action colour, while
+  green, amber and red communicate proof coverage states.
 */
 
 @theme static {
@@ -99,22 +97,10 @@
   --ui-radius: 10px;
 }
 
-.dark {
-  --ui-bg: var(--color-band);
-  --ui-bg-muted: #16181d;
-  --ui-bg-elevated: #1b1e25;
-  --ui-bg-accented: #22262e;
-  --ui-bg-inverted: #f7f7fa;
-  --ui-text-dimmed: #707684;
-  --ui-text-muted: #9da2af;
-  --ui-text-toned: #c6c9d2;
-  --ui-text: #eeeff3;
-  --ui-text-highlighted: #ffffff;
-  --ui-text-inverted: #0f1115;
-  --ui-border: rgba(255, 255, 255, 0.12);
-  --ui-border-muted: rgba(255, 255, 255, 0.06);
-  --ui-border-accented: rgba(255, 255, 255, 0.22);
-}
+/*
+  Light only, deliberately. There is no dark block and no toggle; `.dark` is
+  never applied, so Nuxt UI's own dark variants stay inert.
+*/
 
 html {
   scroll-behavior: smooth;

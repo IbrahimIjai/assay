@@ -1,110 +1,368 @@
 <template>
-  <div class="bg-[var(--color-ivory)] text-[var(--color-ink)]">
-    <section class="relative overflow-hidden border-b border-[var(--color-border-soft)]">
-      <div class="grid-bg absolute inset-0 opacity-90" />
+  <div>
+    <!-- ─────────────────────────────────────────────── hero
+      The inspiration floats decorative service labels around its headline. Here
+      the same device carries the live coverage state of tracked assets, so the
+      ornament is the product's actual signal rather than a garnish.
+    -->
+    <section class="relative overflow-hidden border-b border-default">
+      <div class="grid-bg pointer-events-none absolute inset-0" />
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-ground" />
 
-      <UContainer class="relative py-8 sm:py-10">
-        <div class="flex items-center justify-center">
-          <div class="flex items-center gap-8 text-[14px] font-medium text-[var(--color-ink)]/70">
-            <span class="inline-flex items-center gap-2 rounded-[8px] bg-[var(--color-brand-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-ink)]">
-              <span class="size-2 rounded-sm bg-[var(--color-brand)]" />
-              Service Blocks
-            </span>
-            <a href="#services" class="hover:text-[var(--color-ink)]">Our Services</a>
-            <a href="#work" class="hover:text-[var(--color-ink)]">Work</a>
-            <a href="#pricing" class="hover:text-[var(--color-ink)]">Pricing</a>
-            <a href="#blog" class="hover:text-[var(--color-ink)]">Blog</a>
-          </div>
-          <div class="ml-auto hidden sm:block">
-            <UButton label="Book strategy call" class="rounded-[10px] bg-[var(--color-brand)] text-white shadow-[0_4px_0_0_rgba(17,17,17,0.08)] hover:bg-[var(--color-brand-deep)]" />
+      <UContainer class="relative py-20 lg:py-28">
+        <div
+          v-for="(pill, i) in floatingPills"
+          :key="pill.symbol"
+          class="rise absolute hidden xl:block"
+          :class="pill.position"
+          :style="{ '--i': 6 + i }"
+        >
+          <div class="flex items-center gap-2.5 rounded-full bg-card px-4 py-2.5 shadow-soft ring-1 ring-default">
+            <span
+              class="size-2 rounded-full"
+              :class="statusMeta[pill.status].dot"
+            />
+            <span class="font-data text-[13px] font-medium text-highlighted">{{ pill.symbol }}</span>
+            <span
+              class="text-[13px]"
+              :class="statusMeta[pill.status].text"
+            >{{ statusMeta[pill.status].label }}</span>
           </div>
         </div>
 
-        <div class="relative mt-12 pb-8 text-center sm:mt-16">
-          <div class="absolute left-0 top-12 hidden xl:block">
-            <span class="inline-flex items-center gap-2 rounded-[10px] bg-[var(--color-blue)] px-3 py-2 text-[13px] font-semibold text-white shadow-soft">Mobile App Development</span>
-            <span class="mt-3 block h-0 w-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-[var(--color-blue)]" />
+        <div class="mx-auto max-w-[900px] text-center">
+          <div
+            class="rise inline-flex items-center gap-2 rounded-full bg-card px-3.5 py-1.5 text-[13px] ring-1 ring-default"
+            :style="{ '--i': 0 }"
+          >
+            <span class="size-1.5 animate-pulse rounded-full bg-covered-500" />
+            <span class="text-toned">
+              {{ coveredCount }} of {{ assets.length }} assets covered right now
+            </span>
           </div>
 
-          <div class="absolute right-0 top-12 hidden xl:block">
-            <span class="inline-flex items-center gap-2 rounded-[10px] bg-[var(--color-cyan)] px-3 py-2 text-[13px] font-semibold text-white shadow-soft">Website Design &amp; Development</span>
-            <span class="mt-3 block h-0 w-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-[var(--color-cyan)]" />
-          </div>
-
-          <h1 class="mx-auto max-w-[980px] font-display text-[44px] leading-[0.98] tracking-[-0.06em] text-[var(--color-ink)] sm:text-[64px] lg:text-[86px] xl:text-[100px]">
-            Proof of reserve.<br>
-            <span class="text-[var(--color-brand)]">Private credit.</span><br>
-            Composable RWA infrastructure.
+          <h1 class="mt-8 font-display text-[46px] leading-[0.95] text-highlighted sm:text-[68px] lg:text-[88px]">
+            <span
+              v-for="(line, i) in headline"
+              :key="line"
+              class="rise block"
+              :style="{ '--i': i + 1 }"
+            >{{ line }}</span>
           </h1>
 
-          <p class="mx-auto mt-7 max-w-[700px] text-[18px] text-[var(--color-ink-soft)]">
-            Assay turns custodial attestations into cryptographic proof that tokenized real-world assets stay backed — then makes that proof usable for compliant private lending.
+          <p
+            class="rise mx-auto mt-8 max-w-[620px] text-[17px] leading-[1.65] text-toned sm:text-[19px]"
+            :style="{ '--i': 4 }"
+          >
+            Tokenized silver, property and notes are backed by a PDF an auditor
+            publishes every few months. Assay replaces that with a proof — reserves
+            are at least equal to supply — wired directly into the token, so an
+            issuer physically cannot mint what they cannot back.
           </p>
 
-          <div class="mt-8 flex items-center justify-center gap-4">
-            <UButton label="Book a strategy call" class="rounded-[14px] bg-[var(--color-brand)] px-7 py-3 text-base font-semibold text-white shadow-[0_4px_0_0_rgba(17,17,17,0.08)] hover:bg-[var(--color-brand-deep)]" />
-          </div>
-
-          <div class="mt-10 flex items-center justify-center gap-3 text-[12px] text-[var(--color-ink-soft)]">
-            <span class="rounded-[8px] bg-[var(--color-yellow)] px-2 py-1 font-semibold text-[var(--color-ink)]">AI Agents &amp; Automation</span>
-            <span class="rounded-[8px] bg-[var(--color-cyan)] px-2 py-1 font-semibold text-white">Tokenized RWA</span>
-            <span class="rounded-[8px] bg-[var(--color-brand-soft)] px-2 py-1 font-semibold text-[var(--color-ink)]">Compliance-by-proof</span>
-          </div>
-        </div>
-      </UContainer>
-    </section>
-
-    <section class="bg-[var(--color-brand)] text-white">
-      <UContainer class="py-12 md:py-20">
-        <div class="grid items-center gap-8 md:grid-cols-4">
-          <div v-for="stat in stats" :key="stat.label" class="flex items-center gap-5 border-r border-white/15 last:border-r-0">
-            <div class="text-[52px] font-display leading-none tracking-[-0.05em]">{{ stat.value }}</div>
-            <div class="text-[14px] text-white/85">{{ stat.label }}</div>
+          <div
+            class="rise mt-9 flex flex-wrap items-center justify-center gap-3"
+            :style="{ '--i': 5 }"
+          >
+            <UButton
+              to="/proofs"
+              label="Open the proof explorer"
+              size="lg"
+              trailing-icon="i-lucide-arrow-right"
+            />
+            <UButton
+              to="#how"
+              label="How it works"
+              color="neutral"
+              variant="outline"
+              size="lg"
+            />
           </div>
         </div>
       </UContainer>
     </section>
 
-    <section id="work" class="bg-[var(--color-ivory-strong)] py-16 md:py-20">
+    <!-- ─────────────────────────────────────────── figures band -->
+    <section class="bg-band text-white">
+      <UContainer class="py-14 lg:py-16">
+        <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            v-for="stat in stats"
+            :key="stat.label"
+            class="lg:border-r lg:border-white/12 lg:pr-8 lg:last:border-r-0"
+          >
+            <div class="font-display text-[42px] leading-none text-white lg:text-[48px]">
+              {{ stat.value }}
+            </div>
+            <div class="mt-2.5 text-[14px] text-white/55">
+              {{ stat.label }}
+            </div>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- ─────────────────────────────────────────── tracked assets -->
+    <section
+      id="assets"
+      class="scroll-mt-24 py-20 lg:py-28"
+    >
       <UContainer>
-        <h2 class="font-display text-[44px] leading-none tracking-[-0.05em] text-[var(--color-ink)] md:text-[64px]">
-          Proof-first infrastructure for real-world assets
-        </h2>
+        <div class="flex flex-wrap items-end justify-between gap-6">
+          <div class="max-w-[620px]">
+            <SectionLabel>Tracked assets</SectionLabel>
+            <h2 class="mt-4 font-display text-[38px] leading-[1.03] text-highlighted sm:text-[52px]">
+              Every asset, every round, in the open
+            </h2>
+            <p class="mt-5 text-[16px] leading-[1.65] text-toned">
+              Coverage state is read from <span class="font-data text-[15px] text-highlighted">ReserveRegistry</span>
+              — the same contract the compliance module reads before it will allow a mint.
+              Custodian counts are public; custodian identities are not.
+            </p>
+          </div>
+          <UButton
+            to="/proofs"
+            label="All proof rounds"
+            color="neutral"
+            variant="outline"
+            trailing-icon="i-lucide-arrow-up-right"
+          />
+        </div>
 
-        <div class="mt-10 grid gap-5 lg:grid-cols-3">
-          <article v-for="caseStudy in caseStudies" :key="caseStudy.title" class="rounded-[24px] border border-[var(--color-border-soft)] bg-white p-5 shadow-soft">
-            <div class="mb-5 inline-flex rounded-full bg-[var(--color-brand-soft)] px-3 py-1 text-[12px] font-semibold text-[var(--color-ink)]">{{ caseStudy.tag }}</div>
-            <h3 class="font-display text-[32px] leading-[1.08] tracking-[-0.05em] text-[var(--color-ink)]">{{ caseStudy.title }}</h3>
-            <p class="mt-4 text-[15px] text-[var(--color-ink-soft)]">{{ caseStudy.body }}</p>
+        <div class="mt-12 grid gap-5 md:grid-cols-2">
+          <AssetCard
+            v-for="asset in assets"
+            :key="asset.id"
+            :asset="asset"
+          />
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- ─────────────────────────────────────────── the pipeline -->
+    <section
+      id="how"
+      class="scroll-mt-24 border-y border-default bg-muted py-20 lg:py-28"
+    >
+      <UContainer>
+        <div class="max-w-[680px]">
+          <SectionLabel>The round</SectionLabel>
+          <h2 class="mt-4 font-display text-[38px] leading-[1.03] text-highlighted sm:text-[52px]">
+            From a vault statement to a constraint on the token
+          </h2>
+          <p class="mt-5 text-[16px] leading-[1.65] text-toned">
+            Five steps, repeated on a cadence the issuer configures. Nothing in the
+            chain requires trusting the software that reads the documents.
+          </p>
+        </div>
+
+        <ol class="mt-14 grid gap-px overflow-hidden rounded-panel bg-default ring-1 ring-default lg:grid-cols-5">
+          <li
+            v-for="(step, i) in pipeline"
+            :key="step.title"
+            class="flex flex-col bg-card p-6"
+          >
+            <div class="font-data text-[13px] text-dimmed">
+              {{ String(i + 1).padStart(2, '0') }}
+            </div>
+            <h3 class="mt-4 font-display text-[20px] leading-[1.2] text-highlighted">
+              {{ step.title }}
+            </h3>
+            <p class="mt-3 text-[14px] leading-[1.6] text-toned">
+              {{ step.body }}
+            </p>
+          </li>
+        </ol>
+      </UContainer>
+    </section>
+
+    <!-- ─────────────────────────────────────────── public vs private
+      §5 of the spec, rendered as the split it actually is. This is the section
+      that answers the first question any institutional reader asks.
+    -->
+    <section class="py-20 lg:py-28">
+      <UContainer>
+        <div class="grid gap-14 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+          <div>
+            <SectionLabel>The witness</SectionLabel>
+            <h2 class="mt-4 font-display text-[38px] leading-[1.03] text-highlighted sm:text-[48px]">
+              What the proof shows, and what it never does
+            </h2>
+            <p class="mt-5 text-[16px] leading-[1.65] text-toned">
+              The witness is the circuit's private input. It is not a disclosure.
+              A verifier learns that coverage holds and nothing about the book that
+              produces it.
+            </p>
+
+            <div class="mt-8 rounded-panel bg-band p-6 text-white lg:p-7">
+              <div class="text-[12px] uppercase tracking-[0.09em] text-white/40">
+                Why the agent cannot lie
+              </div>
+              <p class="mt-3 text-[15px] leading-[1.65] text-white/80">
+                Every quantity in the witness must be bound to a signature from a key
+                in the registered custodian set. The agent holds no signing key, so it
+                cannot invent reserves. It can only <em class="text-white">omit</em> an
+                attestation — which makes coverage look worse, never better. The failure
+                mode is asymmetric, and it is slashable.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div
+              v-for="group in disclosure"
+              :key="group.title"
+              class="rounded-panel p-6 ring-1"
+              :class="group.public ? 'bg-card ring-default' : 'bg-ink-950 text-white ring-transparent'"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon
+                  :name="group.public ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+                  class="size-4"
+                  :class="group.public ? 'text-muted' : 'text-white/50'"
+                />
+                <span
+                  class="text-[12px] uppercase tracking-[0.09em]"
+                  :class="group.public ? 'text-muted' : 'text-white/50'"
+                >{{ group.title }}</span>
+              </div>
+              <ul class="mt-5 space-y-3.5">
+                <li
+                  v-for="item in group.items"
+                  :key="item"
+                  class="flex gap-2.5 text-[14px] leading-[1.55]"
+                  :class="group.public ? 'text-toned' : 'text-white/80'"
+                >
+                  <span
+                    class="mt-[7px] size-1 shrink-0 rounded-full"
+                    :class="group.public ? 'bg-ink-400' : 'bg-white/40'"
+                  />
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- ─────────────────────────────────────────── three layers -->
+    <section
+      id="architecture"
+      class="scroll-mt-24 border-y border-default bg-muted py-20 lg:py-28"
+    >
+      <UContainer>
+        <div class="max-w-[680px]">
+          <SectionLabel>Architecture</SectionLabel>
+          <h2 class="mt-4 font-display text-[38px] leading-[1.03] text-highlighted sm:text-[52px]">
+            Three layers. Each useful alone.
+          </h2>
+          <p class="mt-5 text-[16px] leading-[1.65] text-toned">
+            Make backing provable, then make that proof composable. Any lending
+            market, DEX or wallet on HashKey can read the registry without
+            permission and without paying us.
+          </p>
+        </div>
+
+        <div class="mt-14 grid gap-5 lg:grid-cols-3">
+          <article
+            v-for="(layer, i) in layers"
+            :key="layer.title"
+            class="flex flex-col rounded-panel bg-card p-7 ring-1 ring-default"
+          >
+            <div class="flex items-center gap-3">
+              <span class="flex size-9 items-center justify-center rounded-full bg-ink-950 font-data text-[13px] text-white">
+                {{ i + 1 }}
+              </span>
+              <span class="text-[13px] font-medium text-muted">{{ layer.kicker }}</span>
+            </div>
+
+            <h3 class="mt-6 font-display text-[27px] leading-[1.12] text-highlighted">
+              {{ layer.title }}
+            </h3>
+            <p class="mt-4 flex-1 text-[15px] leading-[1.65] text-toned">
+              {{ layer.body }}
+            </p>
+
+            <div class="mt-7 flex flex-wrap gap-2 border-t border-default pt-6">
+              <span
+                v-for="tag in layer.tags"
+                :key="tag"
+                class="rounded-full bg-muted px-2.5 py-1 font-data text-[12px] text-toned"
+              >{{ tag }}</span>
+            </div>
           </article>
         </div>
       </UContainer>
     </section>
 
-    <section id="services" class="py-16 md:py-20">
+    <!-- ─────────────────────────────────────────── limitations
+      Stated before anyone asks, per §13. On the darkest ground in the product,
+      because burying it would undercut the entire argument.
+    -->
+    <section
+      id="limits"
+      class="scroll-mt-24 bg-band py-20 text-white lg:py-28"
+    >
       <UContainer>
-        <h2 class="text-center font-display text-[44px] leading-none tracking-[-0.05em] text-[var(--color-ink)] md:text-[64px]">
-          Where first-time founders get started right
-        </h2>
-        <p class="mx-auto mt-4 max-w-[860px] text-center text-[18px] text-[var(--color-ink-soft)]">
-          We design, build, and ship systems that make private RWA compliance, reserve proof, and stablecoin borrowing intelligible to the market.
-        </p>
-
-        <div class="mt-12 grid gap-8 md:grid-cols-3">
-          <div v-for="feature in features" :key="feature.title" class="rounded-[20px] border border-[var(--color-border-soft)] bg-white p-7 shadow-soft">
-            <div class="mb-6 flex size-12 items-center justify-center rounded-full bg-[var(--color-brand)] text-[22px] text-white">{{ feature.icon }}</div>
-            <h3 class="font-display text-[28px] leading-[1.1] tracking-[-0.04em] text-[var(--color-ink)]">{{ feature.title }}</h3>
-            <p class="mt-4 text-[15px] text-[var(--color-ink-soft)]">{{ feature.body }}</p>
+        <div class="grid gap-14 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+          <div>
+            <div class="text-[12px] uppercase tracking-[0.09em] text-white/40">
+              Known limitations
+            </div>
+            <h2 class="mt-4 font-display text-[38px] leading-[1.03] sm:text-[46px]">
+              What this does not fix
+            </h2>
+            <p class="mt-5 text-[16px] leading-[1.65] text-white/55">
+              Zero knowledge gives consistency, not physical truth. The oracle
+              problem survives. Stated here rather than left for a reader to find.
+            </p>
           </div>
+
+          <dl class="grid gap-px overflow-hidden rounded-panel bg-white/10 ring-1 ring-white/10 sm:grid-cols-2">
+            <div
+              v-for="limit in limitations"
+              :key="limit.title"
+              class="bg-band p-6"
+            >
+              <dt class="font-display text-[19px] text-white">
+                {{ limit.title }}
+              </dt>
+              <dd class="mt-3 text-[14px] leading-[1.6] text-white/60">
+                {{ limit.body }}
+              </dd>
+            </div>
+          </dl>
         </div>
       </UContainer>
     </section>
 
-    <section id="pricing" class="bg-[#101010] py-16 text-white md:py-20">
-      <UContainer class="text-center">
-        <p class="text-[19px] text-white/80">Tell us your idea. We'll help you bring it to life.</p>
-        <div class="mt-6 flex justify-center">
-          <UButton label="Shoot us an email" class="rounded-[14px] border border-white/15 bg-white px-6 py-3 text-[14px] font-semibold text-[#111111] hover:bg-[var(--color-brand-soft)]" />
+    <!-- ─────────────────────────────────────────── closing -->
+    <section class="py-20 lg:py-28">
+      <UContainer>
+        <div class="mx-auto max-w-[640px] text-center">
+          <h2 class="font-display text-[38px] leading-[1.03] text-highlighted sm:text-[48px]">
+            The registry is a public good
+          </h2>
+          <p class="mt-5 text-[17px] leading-[1.65] text-toned">
+            Read it, build on it, or watch a round land. Coverage for every tracked
+            asset is verifiable right now.
+          </p>
+          <div class="mt-9 flex flex-wrap justify-center gap-3">
+            <UButton
+              to="/proofs"
+              label="Open the proof explorer"
+              size="lg"
+              trailing-icon="i-lucide-arrow-right"
+            />
+            <UButton
+              to="/asset/xagh"
+              label="Inspect Assay Silver"
+              color="neutral"
+              variant="outline"
+              size="lg"
+            />
+          </div>
         </div>
       </UContainer>
     </section>
@@ -112,46 +370,122 @@
 </template>
 
 <script setup lang="ts">
-const stats = [
-  { value: '3+', label: 'Years of experience' },
-  { value: '12+', label: 'Startups served' },
-  { value: '4.8', label: 'Star ratings' },
-  { value: '30+', label: 'Projects completed' }
+import {
+  assets,
+  coveredCount,
+  formatUsd,
+  statusMeta,
+  totalValueSecured
+} from '~/utils/assay'
+
+const headline = ['Verified reserves.', 'Private credit.', 'One registry.']
+
+const floatingPills = [
+  { symbol: 'XAGH', status: 'covered' as const, position: 'left-0 top-40' },
+  { symbol: 'PCN-A', status: 'failed' as const, position: 'right-0 top-36' },
+  { symbol: 'HKRE1', status: 'stale' as const, position: 'right-8 bottom-24' }
 ]
 
-const caseStudies = [
+const stats = [
+  { value: formatUsd(totalValueSecured), label: 'Reserve value under proof' },
+  { value: String(assets.length), label: 'Assets tracked on HashKey' },
+  { value: '24h', label: 'Freshness window before mint blocks' },
+  { value: '~250k', label: 'Gas to verify a round on-chain' }
+]
+
+const pipeline = [
   {
-    tag: 'RWA infrastructure',
-    title: 'Proof of reserve for tokenized silver',
-    body: 'We designed a reserve-attestation stack that turns custodian PDFs into cryptographic coverage proofs without exposing underlying identity or holdings.'
+    title: 'Custodians sign',
+    body: 'Vault operators and banks sign structured payloads — asset, quantity, account reference, timestamp — with EdDSA keys registered on-chain.'
   },
   {
-    tag: 'Compliance',
-    title: 'Private lending with eligibility proofs',
-    body: 'Borrowers can prove note ownership and investor compliance in zero knowledge, while lenders verify solvency without reading private position data.'
+    title: 'Agents ingest',
+    body: 'Independent staked operators normalise statements and portal exports into those payloads. They must agree within tolerance or the round fails loudly.'
   },
   {
-    tag: 'Token design',
-    title: 'Auditable collateral rails',
-    body: 'From the issuer registry to the reserve verifier and challenge manager, we mapped the full proving flow to a clean on-chain architecture.'
+    title: 'The circuit proves',
+    body: 'Every quantity is bound to a valid custodian signature, checked for freshness, and summed. The proof asserts reserves ≥ supply and reveals nothing else.'
+  },
+  {
+    title: 'The registry records',
+    body: 'ReserveVerifier checks the proof on-chain and ReserveRegistry stores coverage, timestamp, supply at proof, and proof hash.'
+  },
+  {
+    title: 'Compliance enforces',
+    body: 'AssayCompliance reads the registry inside the ERC-3643 hook. Stale or failed coverage means the mint reverts. Not a dashboard — a constraint.'
   }
 ]
 
-const features = [
+const disclosure = [
   {
-    icon: '↗',
-    title: 'We make it simple',
-    body: 'No stress. No guesswork. Just a sharp product strategy, a clear technical path, and a design system that keeps your roadmap moving.'
+    title: 'Public',
+    public: true,
+    items: [
+      'The proof itself',
+      'Token supply at proof time',
+      'The custodian set root',
+      'The freshness time bound',
+      'A single coverage boolean'
+    ]
   },
   {
-    icon: '◎',
-    title: 'Built to grow with you',
-    body: 'We build for today while staying ready for the next financing round, new compliance rules, and the next version of your market.'
+    title: 'Private',
+    public: false,
+    items: [
+      'Individual custodian quantities',
+      'Account references',
+      'Which custodians signed',
+      'The split across vaults',
+      'Every holder position downstream'
+    ]
+  }
+]
+
+const layers = [
+  {
+    kicker: 'Proof of reserve',
+    title: 'Attestations become a proof',
+    body: 'Agents ingest custodian documents, a Groth16 circuit proves reserves cover supply without revealing the underlying book, and the result is written to an on-chain registry.',
+    tags: ['Circom', 'Groth16', 'EdDSA', 'Poseidon']
   },
   {
-    icon: '✦',
-    title: 'Support that doesn’t disappear',
-    body: 'From early architecture decisions to launch support, we stay close to the product so the roadmap keeps working in the real world.'
+    kicker: 'Enforcement',
+    title: 'The proof binds the token',
+    body: 'The registry is wired into the ERC-3643 compliance module. A stale or failed proof means minting reverts at the contract level — the issuer cannot outrun their own reserves.',
+    tags: ['ERC-3643', 'Compliance hook', 'Freshness']
+  },
+  {
+    kicker: 'Private lending',
+    title: 'Collateral without disclosure',
+    body: 'A shielded vault holds RWA collateral as a single eligible holder. Borrowers prove note ownership and investor eligibility in zero knowledge, then draw stablecoins to a stealth address.',
+    tags: ['Shielded vault', 'Nullifiers', 'Stealth payout', 'Fixed term']
+  }
+]
+
+const limitations = [
+  {
+    title: 'Custodian trust',
+    body: 'A custodian that signs false data yields a valid proof of a lie. We prove consistency between attestations and supply, never physical truth.'
+  },
+  {
+    title: 'Document extraction',
+    body: 'Ideally custodians sign structured payloads and the agents disappear. Reality is PDFs and portal exports, so extraction needs redundancy plus stake rather than trust.'
+  },
+  {
+    title: 'Trusted setup',
+    body: 'Groth16 requires a per-circuit ceremony. Acceptable for a demo; production needs a real ceremony or a migration to a universal-setup system.'
+  },
+  {
+    title: 'Oracle dependency',
+    body: 'Collateral valuation reads a public price oracle, with every assumption that carries.'
+  },
+  {
+    title: 'Fixed-term loans only',
+    body: 'Hidden positions mean nobody knows when to liquidate, so v1 ships fixed-term and over-collateralized with no ongoing liquidation. Deliberate, not an oversight.'
+  },
+  {
+    title: 'Single operator today',
+    body: 'Multi-operator agreement, staking and the challenge manager are specified and next in the build order. Today one operator submits rounds.'
   }
 ]
 </script>

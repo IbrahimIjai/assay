@@ -42,8 +42,10 @@ export default defineNuxtConfig({
     name: 'Vouch'
   },
 
+  // Light only. See the note in main.css — the coverage palette is tuned for a
+  // single ground, so system preference is ignored rather than honoured badly.
   colorMode: {
-    preference: 'system',
+    preference: 'light',
     fallback: 'light'
   },
 
