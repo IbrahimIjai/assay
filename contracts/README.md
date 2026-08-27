@@ -81,6 +81,55 @@ forge test -vvv
 
 The tests currently exercise the mocked verifier boundary so the compliance/enforcement path can be developed independently of proving setup.
 
+## Deploy to HashKey Chain mainnet
+
+The deployment is configured for HashKey Chain mainnet (chain ID `177`) through the
+`hsk_mainnet` RPC alias. The script rejects any other chain ID to prevent an accidental
+testnet deployment.
+
+Set the deployer key without committing it to the repository, confirm that the derived
+account has enough HSK for gas, and run:
+
+```bash
+export DEPLOYER_PRIVATE_KEY=<private-key>
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url hsk_mainnet \
+  --broadcast \
+  --slow
+```
+
+To inspect the current gas price before broadcasting:
+
+```bash
+cast gas-price --rpc-url hsk_mainnet
+```
+
+The script deploys `MockStablecoin` and `MockBorrowVerifier` and seeds the lending pool
+with mock tokens. It is therefore a mainnet demo deployment, not a production deployment
+using a canonical stablecoin or a production borrower verifier.
+
+### Current mainnet demo
+
+The contracts are deployed on HashKey Chain mainnet:
+
+| Contract | Address |
+| --- | --- |
+| Groth16 verifier | `0x7D4adbab9A78a0b278DCc9B16d3643a2F8327c93` |
+| Custodian registry | `0x3BaF50F4152Bb2C3F0E27693600c6C6c56D9D0E7` |
+| Reserve registry | `0xBe9ec79854e459F38E0B868A0c3429AAbf6784b2` |
+| Compliance | `0xfA845604F52843a7b5cfA4030120c6238741F420` |
+| vSILVER | `0xed11D4afd9A7a4fe0bbBAC34315B6B438FF1bc78` |
+| mUSDC | `0x337361Dd8D8Ee27Ab5EfFec69412AC8B080d704a` |
+| Borrow verifier (demo) | `0xC6f99ef3133C628B265551Eb677a2Be8cF411e0d` |
+| Shielded vault | `0xBB4e1DC17e8B233B9233aAD487D44e420490058B` |
+| Lending pool | `0xe0Afb36ca378CdF034c2BdC5Ee3Ac90f726a20c5` |
+| Challenge manager | `0x6BfD1C86a78822243F20461F96EB013566412580` |
+
+For the video, start the mainnet-enabled agent API from `agent/` with
+`./examples/run-api-mainnet.sh`, then start the frontend with `bun run dev`.
+Use this order: healthy proof, mint 1,000 vSILVER, supply 1,000 mUSDC, deposit/borrow/repay,
+then submit the under-backed proof last to demonstrate that subsequent issuance is blocked.
+
 ## Compile the circuit
 
 ```bash

@@ -69,6 +69,11 @@ template ReserveCoverage(N, DEPTH) {
     component keyHashers[N];
     component paths[N];
     component attestationHashers[N];
+    component accountRefEquality[N * (N - 1) / 2];
+    signal bothActive[N * (N - 1) / 2];
+    component tokenSupplyBits = Num2Bits(130);
+
+    tokenSupplyBits.in <== tokenSupply;
 
     var sum = 0;
 
@@ -78,7 +83,7 @@ template ReserveCoverage(N, DEPTH) {
         quantity[i] * (1 - active[i]) === 0;
 
         // Prevent accidental field aliasing for normal demo quantities.
-        quantityBits[i] = Num2Bits(64);
+        quantityBits[i] = Num2Bits(128);
         quantityBits[i].in <== quantity[i];
 
         // asOf >= timeBound when the slot is active.
@@ -123,9 +128,23 @@ template ReserveCoverage(N, DEPTH) {
         sum += quantity[i];
     }
 
+    // A signed account statement may only contribute once per proof. Without this
+    // constraint one valid statement could be copied into every active slot.
+    var comparison = 0;
+    for (var i = 0; i < N; i++) {
+        for (var j = i + 1; j < N; j++) {
+            accountRefEquality[comparison] = IsEqual();
+            accountRefEquality[comparison].in[0] <== accountRef[i];
+            accountRefEquality[comparison].in[1] <== accountRef[j];
+            bothActive[comparison] <== active[i] * active[j];
+            bothActive[comparison] * accountRefEquality[comparison].out === 0;
+            comparison++;
+        }
+    }
+
     // covered must be a boolean and must mean exactly sum >= tokenSupply.
     covered * (1 - covered) === 0;
-    component coverage = GreaterEqThan(128);
+    component coverage = GreaterEqThan(130);
     coverage.in[0] <== sum;
     coverage.in[1] <== tokenSupply;
     covered === coverage.out;

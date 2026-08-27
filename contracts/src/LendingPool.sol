@@ -17,19 +17,35 @@ contract LendingPool is ReentrancyGuard, Ownable {
     ReserveRegistry public immutable reserves;
     uint256 public totalShares;
     uint256 public totalDebt;
+    address public loanManager;
 
     mapping(address account => uint256 shares) public sharesOf;
 
     error InsufficientLiquidity();
     error InsufficientShares();
+    error NotLoanManager();
+    error InvalidLoanManager();
 
     event Supplied(address indexed account, uint256 amount, uint256 shares);
     event Withdrawn(address indexed account, uint256 amount, uint256 shares);
     event DebtRecorded(bytes32 indexed rwaAsset, uint256 amount);
+    event DebtRepaid(uint256 amount);
+    event LoanManagerSet(address indexed loanManager);
 
     constructor(address initialOwner, IERC20 stablecoin, ReserveRegistry reserves_) Ownable(initialOwner) {
         asset = stablecoin;
         reserves = reserves_;
+    }
+
+    modifier onlyLoanManager() {
+        if (msg.sender != loanManager) revert NotLoanManager();
+        _;
+    }
+
+    function setLoanManager(address manager) external onlyOwner {
+        if (manager == address(0)) revert InvalidLoanManager();
+        loanManager = manager;
+        emit LoanManagerSet(manager);
     }
 
     function supply(uint256 amount) external nonReentrant returns (uint256 shares) {
@@ -50,11 +66,19 @@ contract LendingPool is ReentrancyGuard, Ownable {
         emit Withdrawn(msg.sender, amount, shares);
     }
 
-    function recordDebt(bytes32 rwaAsset, uint256 amount) external onlyOwner {
+    function fundLoan(bytes32 rwaAsset, address recipient, uint256 amount) external onlyLoanManager {
         ReserveRegistry.Attestation memory a = reserves.getLatest(rwaAsset);
-        if (!a.covered || !reserves.isFresh(rwaAsset)) revert InsufficientLiquidity();
+        if (!a.covered || !reserves.isFresh(rwaAsset) || asset.balanceOf(address(this)) < amount) {
+            revert InsufficientLiquidity();
+        }
         totalDebt += amount;
+        asset.safeTransfer(recipient, amount);
         emit DebtRecorded(rwaAsset, amount);
+    }
+
+    function recordRepayment(uint256 amount) external onlyLoanManager {
+        totalDebt = amount >= totalDebt ? 0 : totalDebt - amount;
+        emit DebtRepaid(amount);
     }
 
     function totalLiquidity() public view returns (uint256) {

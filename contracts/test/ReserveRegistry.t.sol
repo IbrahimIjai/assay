@@ -49,6 +49,24 @@ contract ReserveRegistryTest is Test {
         assertEq(silver.totalSupply(), 1e18);
     }
 
+    function testMintCannotExceedSupplyCoveredByProof() external {
+        uint256[2] memory a;
+        uint256[2][2] memory b;
+        uint256[2] memory c;
+        uint256[5] memory pub = [
+            uint256(asset),
+            uint256(bytes32(uint256(1234))),
+            uint256(100),
+            uint256(block.timestamp),
+            uint256(1)
+        ];
+
+        reserves.submitProof(asset, a, b, c, pub);
+        silver.mint(address(this), 100);
+        vm.expectRevert(AssayCompliance.ProvenSupplyExceeded.selector);
+        silver.mint(address(this), 1);
+    }
+
     function testMintBlockedWhenCoverageFails() external {
         verifier.setAccept(true);
         uint256[2] memory a;

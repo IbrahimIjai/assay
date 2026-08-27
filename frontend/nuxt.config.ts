@@ -6,7 +6,8 @@ export default defineNuxtConfig({
     '@nuxt/hints',
     '@nuxt/image',
     '@nuxtjs/google-fonts',
-    '@nuxtjs/seo'
+    '@nuxtjs/seo',
+    '@wagmi/vue/nuxt'
   ],
 
   devtools: {
@@ -38,8 +39,8 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: 'https://vouch.id',
-    name: 'Vouch'
+    url: process.env.NUXT_PUBLIC_SITE_URL,
+    name: 'Assay'
   },
 
   // Light only. See the note in main.css — the coverage palette is tuned for a
@@ -54,6 +55,20 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-06-30',
+
+  nitro: {
+    prerender: {
+      routes: [
+        '/asset/silver-001',
+        '/issuer/proof',
+        '/issuer/mint',
+        '/proofs',
+        '/borrow',
+        '/lend',
+        '/operator'
+      ]
+    }
+  },
 
   eslint: {
     config: {

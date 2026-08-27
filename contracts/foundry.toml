@@ -16,4 +16,4 @@ tab_width = 4
 bracket_spacing = true
 
 [rpc_endpoints]
-hsk_testnet = "${HSK_TESTNET_RPC_URL}"
+hsk_mainnet = "https://mainnet.hsk.xyz"

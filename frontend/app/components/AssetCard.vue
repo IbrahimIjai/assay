@@ -6,7 +6,7 @@
 -->
 <template>
   <NuxtLink
-    :to="`/asset/${asset.id}`"
+    :to="`/asset/${asset.id.toLowerCase()}`"
     class="group flex flex-col rounded-panel bg-card p-6 ring-1 ring-default transition-shadow duration-200 hover:shadow-soft"
   >
     <div class="flex items-start justify-between gap-4">

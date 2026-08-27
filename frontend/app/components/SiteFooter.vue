@@ -45,7 +45,7 @@
           Assay proves consistency between custodian attestations and token supply.
           It does not prove physical truth.
         </span>
-        <span class="font-data">HashKey Chain &middot; testnet</span>
+        <span class="font-data">HashKey Chain &middot; mainnet</span>
       </div>
     </UContainer>
   </footer>
@@ -58,17 +58,17 @@ const columns = [
     links: [
       { label: 'Tracked assets', to: '/#assets' },
       { label: 'Proof explorer', to: '/proofs' },
-      { label: 'How it works', to: '/#how' },
-      { label: 'Architecture', to: '/#architecture' }
+      { label: 'Borrow privately', to: '/borrow' },
+      { label: 'Pool health', to: '/lend' }
     ]
   },
   {
     title: 'Build',
     links: [
-      { label: 'Reserve registry', to: '/#architecture' },
-      { label: 'Compliance module', to: '/#architecture' },
-      { label: 'Shielded vault', to: '/#architecture' },
-      { label: 'Run an operator', to: '/#architecture' }
+      { label: 'Run reserve proof', to: '/issuer/proof' },
+      { label: 'Mint vSILVER', to: '/issuer/mint' },
+      { label: 'Operator network', to: '/operator' },
+      { label: 'Architecture', to: '/#architecture' }
     ]
   },
   {

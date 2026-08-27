@@ -35,6 +35,24 @@
         <p class="mt-6 max-w-[660px] text-[16px] leading-[1.65] text-toned">
           {{ asset.blurb }}
         </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <UButton
+            v-if="asset.id === 'SILVER-001'"
+            to="/issuer/mint"
+            label="Mint tokens"
+            size="lg"
+            :disabled="asset.status !== 'covered'"
+            trailing-icon="i-lucide-arrow-right"
+          />
+          <UButton
+            to="/issuer/proof"
+            label="Run reserve proof"
+            color="neutral"
+            variant="outline"
+            size="lg"
+          />
+        </div>
       </UContainer>
     </section>
 
@@ -201,6 +219,72 @@
         between them are not. Both are private inputs to the circuit, and a verifier
         learns only that the signed quantities sum above supply.
       </p>
+
+      <div class="mt-14 grid gap-6 lg:grid-cols-2">
+        <section class="rounded-panel bg-card p-6 ring-1 ring-default">
+          <SectionLabel>On-chain contracts</SectionLabel>
+          <h2 class="mt-3 font-display text-[30px] text-highlighted">
+            Verification path
+          </h2>
+          <dl class="mt-6 space-y-3">
+            <div
+              v-for="contract in contractRows"
+              :key="contract.label"
+              class="flex items-center justify-between gap-4 border-b border-default pb-3 last:border-0"
+            >
+              <dt class="text-[13px] text-muted">
+                {{ contract.label }}
+              </dt>
+              <dd>
+                <a
+                  :href="explorerAddress(contract.address)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-data text-[12px] text-highlighted underline decoration-ink-300 underline-offset-4"
+                >
+                  {{ truncateHash(contract.address) }}
+                </a>
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="rounded-panel bg-band p-6 text-white">
+          <div class="text-[12px] uppercase tracking-[0.09em] text-white/40">
+            Public / private boundary
+          </div>
+          <h2 class="mt-3 font-display text-[30px]">
+            What verification reveals
+          </h2>
+          <div class="mt-6 grid gap-5 sm:grid-cols-2">
+            <div>
+              <div class="font-data text-[12px] text-covered-300">
+                PUBLIC
+              </div>
+              <ul class="mt-3 space-y-2 text-[13px] text-white/70">
+                <li>Asset and token supply</li>
+                <li>Coverage result</li>
+                <li>As-of time and proof hash</li>
+                <li>Custodian count and root</li>
+              </ul>
+            </div>
+            <div>
+              <div class="font-data text-[12px] text-stale-300">
+                PRIVATE
+              </div>
+              <ul class="mt-3 space-y-2 text-[13px] text-white/70">
+                <li>Custodian identities</li>
+                <li>Individual quantities</li>
+                <li>Accounts and signatures</li>
+                <li>Source documents</li>
+              </ul>
+            </div>
+          </div>
+          <p class="mt-6 text-[12px] leading-[1.6] text-white/45">
+            ZK proves that signed statements satisfy circuit constraints. It does not prove physical truth.
+          </p>
+        </section>
+      </div>
     </UContainer>
   </div>
 </template>
@@ -217,6 +301,7 @@ import {
   statusMeta,
   truncateHash
 } from '~/utils/assay'
+import { contracts, explorerAddress } from '~/utils/contracts'
 
 const route = useRoute()
 
@@ -236,13 +321,21 @@ useSeoMeta({
 })
 
 const rounds = roundsForAsset(asset.id)
+const latestRound = rounds[0]
 const remaining = freshnessRemainingMinutes(asset)
 
 const facts = [
   { label: 'Reserve value', value: formatUsd(assetValueUsd(asset)), mono: true },
   { label: 'Custodians', value: `${asset.custodians} registered`, mono: false },
   { label: 'Max LTV', value: asset.maxLtvBps ? `${asset.maxLtvBps / 100}%` : 'Borrowing blocked', mono: true },
-  { label: 'Token contract', value: `${asset.contract.slice(0, 10)}…${asset.contract.slice(-6)}`, mono: true }
+  { label: 'Latest proof', value: latestRound ? truncateHash(latestRound.proofHash) : 'No proof', mono: true }
+]
+
+const contractRows = [
+  { label: 'Reserve registry', address: contracts.reserveRegistry },
+  { label: 'Groth16 verifier', address: contracts.reserveVerifier },
+  { label: 'Compliance module', address: contracts.compliance },
+  { label: 'vSILVER token', address: contracts.rwaToken }
 ]
 
 const headings = [

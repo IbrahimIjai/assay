@@ -1,8 +1,8 @@
 /**
- * Demo data for the Assay Protocol frontend.
+ * Public presentation metadata for the deployed SILVER-001 mainnet demo.
  *
- * Contracts are still under development, so this module stands in for reads
- * against `ReserveRegistry`, `CustodianRegistry` and `LendingPool`. The shapes
+ * Transactional pages read `ReserveRegistry`, `CustodianRegistry` and
+ * `LendingPool` directly. The shapes
  * deliberately mirror the on-chain ones — `Attestation` here carries the same
  * four fields the Solidity struct does, and `coverageStatus` returns the same
  * three states — so replacing this file with real contract reads is a matter
@@ -14,6 +14,8 @@
  */
 
 /** Mirrors `ReserveRegistry.coverageStatus()`: 0 ok, 1 stale, 2 failed. */
+import { contracts } from '~/utils/contracts'
+
 export type CoverageStatus = 'covered' | 'stale' | 'failed'
 
 export interface Asset {
@@ -58,89 +60,27 @@ export interface ProofRound {
 
 export const assets: Asset[] = [
   {
-    id: 'xagh',
-    symbol: 'XAGH',
-    name: 'Assay Silver',
-    kind: 'Precious metal',
-    unit: 'oz',
+    id: 'SILVER-001',
+    symbol: 'SILVER-001',
+    name: 'Verified Silver',
+    kind: 'Tokenized silver',
+    unit: 'kg',
     custodians: 3,
-    supply: 4_812_500,
-    reserves: 4_861_200,
+    supply: 4_000,
+    reserves: 4_180,
     priceUsd: 31.42,
     maxLtvBps: 6500,
     freshnessWindowHours: 24,
     lastProofMinutesAgo: 14,
     status: 'covered',
-    contract: '0x7a41c2De9F0b8E5417cC3A9d6b21fE84c05B7d33',
-    blurb: 'Allocated silver held across three vault operators. Attestations are signed per account and proven in aggregate, so the split between vaults never leaves the witness.'
-  },
-  {
-    id: 'xauh',
-    symbol: 'XAUH',
-    name: 'Assay Gold',
-    kind: 'Precious metal',
-    unit: 'oz',
-    custodians: 2,
-    supply: 61_400,
-    reserves: 62_050,
-    priceUsd: 2_411.80,
-    maxLtvBps: 7000,
-    freshnessWindowHours: 24,
-    lastProofMinutesAgo: 8,
-    status: 'covered',
-    contract: '0x3Fb9E7a1C48d05266bB1cE4f79A0d3821eC94b17',
-    blurb: 'Two custodians, both signing structured payloads natively. The reference case for what Layer 1 looks like once document extraction is out of the loop entirely.'
-  },
-  {
-    id: 'hkre1',
-    symbol: 'HKRE1',
-    name: 'Kowloon Commercial Portfolio',
-    kind: 'Real estate',
-    unit: 'units',
-    custodians: 4,
-    supply: 2_400_000,
-    reserves: 2_428_000,
-    priceUsd: 1.04,
-    maxLtvBps: 4500,
-    freshnessWindowHours: 24,
-    lastProofMinutesAgo: 1_874,
-    status: 'stale',
-    contract: '0xB2c740Ee81aF3d9925cC0b6183eA71fD4482a0c9',
-    blurb: 'Rent rolls arrive as portal exports on a weekly cadence, which makes this the asset most exposed to extraction risk. The last round is outside its freshness window.'
-  },
-  {
-    id: 'pcna',
-    symbol: 'PCN-A',
-    name: 'Private Credit Note, Series A',
-    kind: 'Private credit',
-    unit: 'notional',
-    custodians: 2,
-    supply: 18_500_000,
-    reserves: 17_940_000,
-    priceUsd: 1.00,
-    maxLtvBps: 0,
-    freshnessWindowHours: 24,
-    lastProofMinutesAgo: 126,
-    status: 'failed',
-    contract: '0x9E0aB4172c53Df8106bb4E9a2705Cc3F81D6e254',
-    blurb: 'The bank confirmation for the last round attested less notional than tokens outstanding. The proof verified; coverage did not hold. Minting is blocked at the compliance module.'
+    contract: contracts.rwaToken,
+    blurb: 'Private custodian evidence is turned into a public reserve proof. The chain only sees the claim and the proof — not the individual vault accounts or the underlying reserve book.'
   }
 ]
 
-export const proofRounds: ProofRound[] = [
-  { id: 'r-4821', assetId: 'xauh', minutesAgo: 8, status: 'covered', coverageBps: 10106, supplyAtProof: 61_400, proofHash: '0x8c41f0a95d2b7e63c04af1928be5730d6ca8412f9e07b3d5182ac6490fe3b7d1', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 248_912, block: 14_902_338 },
-  { id: 'r-4820', assetId: 'xagh', minutesAgo: 14, status: 'covered', coverageBps: 10101, supplyAtProof: 4_812_500, proofHash: '0x2fa7c31d84e05b96027cf4a1382de6740b9c15a8f3027ed4619b8c05a7f2d3e8', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 251_044, block: 14_902_301 },
-  { id: 'r-4819', assetId: 'pcna', minutesAgo: 126, status: 'failed', coverageBps: 9697, supplyAtProof: 18_500_000, proofHash: '0xd51b902ac7e4f6380192bc45de7a0c8341f96e2b70d5a8c194e073fb62ad5c07', operatorsAgreed: 2, operatorsTotal: 2, verifyGas: 249_530, block: 14_899_774 },
-  { id: 'r-4818', assetId: 'xagh', minutesAgo: 194, status: 'covered', coverageBps: 10098, supplyAtProof: 4_812_500, proofHash: '0x7e39041ca8b2df65017a3e92c4bd8016f5a27db390ce641852af07b9d3e2c164', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 250_887, block: 14_898_112 },
-  { id: 'r-4817', assetId: 'xauh', minutesAgo: 248, status: 'covered', coverageBps: 10112, supplyAtProof: 61_400, proofHash: '0x1b6ce8305f9a274d0e83b1c26fa47509d8e3021b7ca5946f30d18e7a25c4b093', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 248_701, block: 14_896_940 },
-  { id: 'r-4816', assetId: 'pcna', minutesAgo: 366, status: 'challenged', coverageBps: 10004, supplyAtProof: 18_500_000, proofHash: '0xa0f7523be91c4d86027e5fa31c9b04d7826ef5910ac37d2b6408f19e5da72c3b', operatorsAgreed: 1, operatorsTotal: 2, verifyGas: 249_118, block: 14_894_507 },
-  { id: 'r-4815', assetId: 'xagh', minutesAgo: 434, status: 'covered', coverageBps: 10094, supplyAtProof: 4_780_000, proofHash: '0x64d1a07f3e5928bc016d4a83f0e27519cb8305de74a1962f08b3ec5107d94a2f', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 251_320, block: 14_892_880 },
-  { id: 'r-4814', assetId: 'hkre1', minutesAgo: 1_874, status: 'covered', coverageBps: 10117, supplyAtProof: 2_400_000, proofHash: '0xf30b846ac25917de0483b1e69c07a2d5138fe940b7c25a0e6941d38b07ac52e1', operatorsAgreed: 4, operatorsTotal: 4, verifyGas: 250_216, block: 14_871_045 },
-  { id: 'r-4813', assetId: 'xauh', minutesAgo: 2_102, status: 'covered', coverageBps: 10098, supplyAtProof: 60_950, proofHash: '0x5c92e10bd4a7f38602e15c9a7b04df3186ea720c95d3f1b807a4e26c9d15b3fa', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 248_455, block: 14_866_312 },
-  { id: 'r-4812', assetId: 'xagh', minutesAgo: 2_310, status: 'covered', coverageBps: 10089, supplyAtProof: 4_780_000, proofHash: '0x0e47b13fa6c2905d81e0374bc95a2fd6018c73e5a940b2168df05c39e7a4b16d', operatorsAgreed: 3, operatorsTotal: 3, verifyGas: 250_993, block: 14_862_180 },
-  { id: 'r-4811', assetId: 'hkre1', minutesAgo: 11_954, status: 'covered', coverageBps: 10105, supplyAtProof: 2_400_000, proofHash: '0xb8250fa71c9d3e460187ac52d0b39f7e14620ca8935df70b41e2a86c5017d9b3', operatorsAgreed: 4, operatorsTotal: 4, verifyGas: 250_402, block: 14_781_663 },
-  { id: 'r-4810', assetId: 'pcna', minutesAgo: 12_218, status: 'covered', coverageBps: 10021, supplyAtProof: 18_500_000, proofHash: '0x36ea917c05b2d84f0163ba7e29d05c418f7302ba6d915e0c74a3b28f01ce4d67', operatorsAgreed: 2, operatorsTotal: 2, verifyGas: 249_874, block: 14_776_209 }
-]
+// Live proof state is read from ReserveRegistry. We intentionally do not ship
+// fictional mainnet rounds as a fallback.
+export const proofRounds: ProofRound[] = []
 
 /* ------------------------------------------------------------------ derived */
 
@@ -149,7 +89,7 @@ export function getAsset(id: string): Asset | undefined {
 }
 
 export function roundsForAsset(id: string): ProofRound[] {
-  return proofRounds.filter(r => r.assetId === id)
+  return proofRounds.filter(r => r.assetId.toLowerCase() === id.toLowerCase())
 }
 
 /** Attested reserves over supply. Above 1.0 is the only acceptable value. */

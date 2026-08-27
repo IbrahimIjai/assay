@@ -2,15 +2,16 @@
 pragma solidity ^0.8.24;
 
 import {IBorrowVerifier} from "../interfaces/IBorrowVerifier.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockBorrowVerifier is IBorrowVerifier {
+contract MockBorrowVerifier is IBorrowVerifier, Ownable {
     bool public accept;
 
-    constructor(bool accept_) {
+    constructor(address initialOwner, bool accept_) Ownable(initialOwner) {
         accept = accept_;
     }
 
-    function setAccept(bool accept_) external {
+    function setAccept(bool accept_) external onlyOwner {
         accept = accept_;
     }
 

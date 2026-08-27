@@ -5,6 +5,8 @@
   "scripts": {
     "circuit:compile": "circom2 circuit/reserve_coverage.circom --r1cs --wasm --sym --output circuit/build -l node_modules",
     "circuit:info": "snarkjs r1cs info circuit/build/reserve_coverage.r1cs",
+    "proof:healthy": "node circuit/scripts/prove_reserves.mjs --scenario healthy",
+    "proof:failed": "node circuit/scripts/prove_reserves.mjs --scenario failed",
     "circuit:witness": "node circuit/scripts/generate_witness.js",
     "test:js": "node circuit/scripts/test_witness.js"
   },
@@ -14,6 +16,8 @@
     "snarkjs": "0.7.6"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "5.6.1"
+    "@openzeppelin/contracts": "5.6.1",
+    "circomlibjs": "0.1.7",
+    "viem": "2.37.3"
   }
 }

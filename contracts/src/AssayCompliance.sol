@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ICompliance} from "./interfaces/ICompliance.sol";
 import {ReserveRegistry} from "./ReserveRegistry.sol";
 
@@ -17,6 +18,7 @@ contract AssayCompliance is Ownable, ICompliance {
     error InvalidToken();
     error ReserveNotFresh();
     error ReserveNotCovered();
+    error ProvenSupplyExceeded();
 
     event TokenBound(address indexed token);
 
@@ -31,10 +33,14 @@ contract AssayCompliance is Ownable, ICompliance {
         emit TokenBound(tokenAddress);
     }
 
-    function created(address, uint256) external view override {
+    function created(address, uint256 amount) external view override {
         if (msg.sender != token) revert NotToken();
         if (!reserves.isFresh(asset)) revert ReserveNotFresh();
-        if (!reserves.getLatest(asset).covered) revert ReserveNotCovered();
+        ReserveRegistry.Attestation memory attestation = reserves.getLatest(asset);
+        if (!attestation.covered) revert ReserveNotCovered();
+        if (IERC20(token).totalSupply() + amount > attestation.supplyAtProof) {
+            revert ProvenSupplyExceeded();
+        }
     }
 
     function canTransfer(address, address, uint256) external view override returns (bool) {

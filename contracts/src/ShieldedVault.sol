@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IBorrowVerifier} from "./interfaces/IBorrowVerifier.sol";
 import {ReserveRegistry} from "./ReserveRegistry.sol";
+import {LendingPool} from "./LendingPool.sol";
 
 /// @title ShieldedVault
 /// @notice Commitment-based collateral vault skeleton for private RWA positions.
@@ -20,6 +21,8 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
     struct Loan {
         bytes32 asset;
         bytes32 noteCommitment;
+        address borrower;
+        uint256 collateralAmount;
         uint256 debt;
         uint64 maturity;
         bool repaid;
@@ -27,11 +30,19 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
     }
 
     IERC20 public immutable stablecoin;
+    LendingPool public immutable pool;
     ReserveRegistry public immutable reserves;
     IBorrowVerifier public borrowVerifier;
 
     mapping(bytes32 asset => IERC20 token) public rwaTokens;
-    mapping(bytes32 commitment => bool) public noteExists;
+    struct Note {
+        bytes32 asset;
+        address owner;
+        uint256 amount;
+        bool locked;
+    }
+
+    mapping(bytes32 commitment => Note) public notes;
     mapping(bytes32 nullifier => bool) public nullifierUsed;
     mapping(bytes32 loanId => Loan) public loans;
 
@@ -45,6 +56,8 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
     error LoanNotFound();
     error AlreadyRepaid();
     error NotMatured();
+    error NotNoteOwner();
+    error DebtAboveLtv();
 
     event AssetTokenSet(bytes32 indexed asset, address indexed token);
     event Deposited(bytes32 indexed asset, bytes32 indexed commitment, uint256 amount);
@@ -54,11 +67,12 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
 
     constructor(
         address initialOwner,
-        IERC20 stablecoin_,
+        LendingPool pool_,
         ReserveRegistry reserves_,
         IBorrowVerifier verifier_
     ) Ownable(initialOwner) {
-        stablecoin = stablecoin_;
+        pool = pool_;
+        stablecoin = pool_.asset();
         reserves = reserves_;
         borrowVerifier = verifier_;
     }
@@ -76,10 +90,10 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
         IERC20 token = rwaTokens[asset];
         if (address(token) == address(0)) revert InvalidAsset();
         if (amount == 0) revert InvalidDebt();
-        if (noteExists[noteCommitment]) revert NoteExists();
+        if (notes[noteCommitment].owner != address(0)) revert NoteExists();
 
         token.safeTransferFrom(msg.sender, address(this), amount);
-        noteExists[noteCommitment] = true;
+        notes[noteCommitment] = Note(asset, msg.sender, amount, false);
         emit Deposited(asset, noteCommitment, amount);
     }
 
@@ -99,6 +113,7 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
         if (stealthPayout == address(0)) revert InvalidDebt();
         if (maturity <= block.timestamp) revert InvalidMaturity();
         if (publicInputs[3] != 1 || !reserves.isFresh(asset)) revert InvalidProof();
+        if (!reserves.getLatest(asset).covered) revert InvalidProof();
         if (nullifierUsed[bytes32(publicInputs[5])]) revert NullifierUsed();
 
         if (!borrowVerifier.verifyProof(a, b, c, publicInputs)) revert InvalidProof();
@@ -106,20 +121,29 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
         uint256 debt = publicInputs[4];
         if (debt == 0) revert InvalidDebt();
         bytes32 commitment = bytes32(publicInputs[6]);
-        if (!noteExists[commitment]) revert UnknownNote();
+        Note storage note = notes[commitment];
+        if (note.owner == address(0) || note.asset != asset || note.locked) revert UnknownNote();
+        if (note.owner != msg.sender) revert NotNoteOwner();
+
+        // Demo valuation: one vSILVER is $40 and loans are capped at 60% LTV.
+        uint256 maxDebt = (note.amount * 40e6 * 6000) / (1e18 * 10_000);
+        if (debt > maxDebt) revert DebtAboveLtv();
 
         nullifierUsed[bytes32(publicInputs[5])] = true;
+        note.locked = true;
         loanId = keccak256(abi.encode(asset, commitment, publicInputs[5], block.chainid));
         loans[loanId] = Loan({
             asset: asset,
             noteCommitment: commitment,
+            borrower: msg.sender,
+            collateralAmount: note.amount,
             debt: debt,
             maturity: maturity,
             repaid: false,
             auctioned: false
         });
 
-        stablecoin.safeTransfer(stealthPayout, debt);
+        pool.fundLoan(asset, stealthPayout, debt);
         emit Borrowed(loanId, asset, debt, maturity);
     }
 
@@ -128,11 +152,18 @@ contract ShieldedVault is ReentrancyGuard, Ownable {
         if (loan.maturity == 0) revert LoanNotFound();
         if (loan.repaid) revert AlreadyRepaid();
 
-        stablecoin.safeTransferFrom(msg.sender, address(this), amount);
-        if (amount >= loan.debt) loan.repaid = true;
-        else loan.debt -= amount;
+        uint256 payment = amount > loan.debt ? loan.debt : amount;
+        stablecoin.safeTransferFrom(msg.sender, address(pool), payment);
+        pool.recordRepayment(payment);
+        if (payment == loan.debt) {
+            loan.repaid = true;
+            notes[loan.noteCommitment].locked = false;
+            rwaTokens[loan.asset].safeTransfer(loan.borrower, loan.collateralAmount);
+        } else {
+            loan.debt -= payment;
+        }
 
-        emit Repaid(loanId, amount);
+        emit Repaid(loanId, payment);
     }
 
     function auction(bytes32 loanId) external onlyOwner {

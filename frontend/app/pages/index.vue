@@ -43,21 +43,22 @@
 
           <h1 class="mt-8 font-display text-[46px] leading-[0.95] text-highlighted sm:text-[68px] lg:text-[88px]">
             <span
-              v-for="(line, i) in headline"
-              :key="line"
               class="rise block"
-              :style="{ '--i': i + 1 }"
-            >{{ line }}</span>
+              :style="{ '--i': 1 }"
+            >Prove an RWA is backed</span>
+            <span
+              class="rise block"
+              :style="{ '--i': 2 }"
+            >without exposing what backs it.</span>
           </h1>
 
           <p
             class="rise mx-auto mt-8 max-w-[620px] text-[17px] leading-[1.65] text-toned sm:text-[19px]"
             :style="{ '--i': 4 }"
           >
-            Tokenized silver, property and notes are backed by a PDF an auditor
-            publishes every few months. Assay replaces that with a proof — reserves
-            are at least equal to supply — wired directly into the token, so an
-            issuer physically cannot mint what they cannot back.
+            AI agents turn private custodian records into verifiable reserve proofs.
+            HashKey Chain enforces the result, so the public proof can say coverage is
+            true without revealing the underlying reserve book.
           </p>
 
           <div
@@ -65,14 +66,14 @@
             :style="{ '--i': 5 }"
           >
             <UButton
-              to="/proofs"
-              label="Open the proof explorer"
+              to="/asset/silver-001"
+              label="View Verified Assets"
               size="lg"
               trailing-icon="i-lucide-arrow-right"
             />
             <UButton
-              to="#how"
-              label="How it works"
+              to="/issuer/proof"
+              label="Run Demo"
               color="neutral"
               variant="outline"
               size="lg"
@@ -356,8 +357,8 @@
               trailing-icon="i-lucide-arrow-right"
             />
             <UButton
-              to="/asset/xagh"
-              label="Inspect Assay Silver"
+              to="/asset/silver-001"
+              label="Inspect Verified Silver"
               color="neutral"
               variant="outline"
               size="lg"
@@ -378,12 +379,8 @@ import {
   totalValueSecured
 } from '~/utils/assay'
 
-const headline = ['Verified reserves.', 'Private credit.', 'One registry.']
-
 const floatingPills = [
-  { symbol: 'XAGH', status: 'covered' as const, position: 'left-0 top-40' },
-  { symbol: 'PCN-A', status: 'failed' as const, position: 'right-0 top-36' },
-  { symbol: 'HKRE1', status: 'stale' as const, position: 'right-8 bottom-24' }
+  { symbol: 'SILVER-001', status: 'covered' as const, position: 'left-0 top-40' }
 ]
 
 const stats = [

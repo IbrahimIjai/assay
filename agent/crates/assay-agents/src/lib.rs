@@ -1,9 +1,12 @@
-use anyhow::{bail, Context, Result};
-use assay_core::{parse_decimal, CustodianAttestation, DocumentRef, EvidenceResult, Reconciliation, ReserveJob, ReserveWitnessInput, RiskFinding, Severity};
+use anyhow::{Context, Result, bail};
+use assay_core::{
+    CustodianAttestation, DocumentRef, EvidenceResult, Reconciliation, ReserveJob,
+    ReserveWitnessInput, RiskFinding, Severity, parse_decimal,
+};
 use assay_llm::Llm;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de::Error as _};
 use sha2::{Digest, Sha256};
 use std::{path::Path, sync::Arc};
 use uuid::Uuid;
@@ -18,11 +21,51 @@ pub struct ExtractedDocument {
 pub struct LlmExtraction {
     pub asset_id: String,
     pub custodian: String,
+    #[serde(deserialize_with = "deserialize_string_or_number")]
     pub quantity: String,
     pub unit: String,
     pub account_ref: String,
     pub as_of: String,
+    #[serde(deserialize_with = "deserialize_confidence")]
     pub confidence: f32,
+}
+
+fn deserialize_string_or_number<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match serde_json::Value::deserialize(deserializer)? {
+        serde_json::Value::String(value) => Ok(value),
+        serde_json::Value::Number(value) => Ok(value.to_string()),
+        _ => Err(D::Error::custom("value must be a string or number")),
+    }
+}
+
+fn deserialize_confidence<'de, D>(deserializer: D) -> Result<f32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    let confidence = match value {
+        serde_json::Value::Number(number) => number
+            .as_f64()
+            .ok_or_else(|| D::Error::custom("confidence must be a finite number"))?
+            as f32,
+        serde_json::Value::String(label) => match label.trim().to_ascii_lowercase().as_str() {
+            "high" => 0.95,
+            "medium" | "moderate" => 0.70,
+            "low" => 0.40,
+            numeric => numeric
+                .parse::<f32>()
+                .map_err(|_| D::Error::custom("confidence must be numeric or high/medium/low"))?,
+        },
+        _ => return Err(D::Error::custom("confidence must be a number or label")),
+    };
+
+    if !confidence.is_finite() || !(0.0..=1.0).contains(&confidence) {
+        return Err(D::Error::custom("confidence must be between 0 and 1"));
+    }
+    Ok(confidence)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,7 +83,9 @@ pub struct NativePdfExtractor;
 #[async_trait]
 impl DocumentExtractor for NativePdfExtractor {
     async fn extract(&self, path: &Path) -> Result<ExtractedDocument> {
-        let bytes = tokio::fs::read(path).await.with_context(|| format!("read {}", path.display()))?;
+        let bytes = tokio::fs::read(path)
+            .await
+            .with_context(|| format!("read {}", path.display()))?;
         let document = DocumentRef::from_bytes(path.display().to_string(), &bytes);
         let text = pdf_extract::extract_text_from_mem(&bytes)
             .with_context(|| format!("extract PDF text from {}", path.display()))?;
@@ -48,12 +93,15 @@ impl DocumentExtractor for NativePdfExtractor {
     }
 }
 
-pub struct DocumentAgent<L: Llm + ?Sized> { pub llm: Arc<L> }
+pub struct DocumentAgent<L: Llm + ?Sized> {
+    pub llm: Arc<L>,
+}
 
 impl<L: Llm + ?Sized> DocumentAgent<L> {
     pub async fn run(&self, doc: ExtractedDocument) -> Result<EvidenceResult> {
-        let system = r#"You are Assay's RWA evidence extraction agent. Extract ONLY facts explicitly present in the supplied custodian document. Never invent or infer quantities. Return JSON with asset_id, custodian, quantity, unit, account_ref, as_of (RFC3339), confidence, and one or more concise findings if anything is inconsistent. If a field is absent, return an empty string. This output is evidence for later deterministic validation, not proof of physical truth."#;
-        let extracted: LlmExtraction = serde_json::from_value(self.llm.complete_json(system, &doc.text).await?)?;
+        let system = r#"You are Assay's RWA evidence extraction agent. Extract ONLY facts explicitly present in the supplied custodian document. Never invent or infer quantities. Return JSON with asset_id, custodian, quantity, unit, account_ref, as_of (RFC3339), confidence (a numeric value from 0 to 1), and one or more concise findings if anything is inconsistent. If a field is absent, return an empty string. This output is evidence for later deterministic validation, not proof of physical truth."#;
+        let extracted: LlmExtraction =
+            serde_json::from_value(self.llm.complete_json(system, &doc.text).await?)?;
         let as_of = DateTime::parse_from_rfc3339(&extracted.as_of)?.with_timezone(&Utc);
         let att = CustodianAttestation {
             attestation_id: Uuid::new_v4(),
@@ -75,7 +123,10 @@ impl<L: Llm + ?Sized> DocumentAgent<L> {
                 evidence_ids: vec![att.attestation_id],
             });
         }
-        if parse_decimal(&att.quantity).is_err() || att.asset_id.is_empty() || att.account_ref.is_empty() {
+        if parse_decimal(&att.quantity).is_err()
+            || att.asset_id.is_empty()
+            || att.account_ref.is_empty()
+        {
             findings.push(RiskFinding {
                 severity: Severity::High,
                 category: "malformed_attestation".to_string(),
@@ -83,34 +134,54 @@ impl<L: Llm + ?Sized> DocumentAgent<L> {
                 evidence_ids: vec![att.attestation_id],
             });
         }
-        Ok(EvidenceResult { document_id: doc.document.document_id, valid: findings.iter().all(|f| !matches!(f.severity, Severity::High | Severity::Critical)), findings, attestations: vec![att] })
+        Ok(EvidenceResult {
+            document_id: doc.document.document_id,
+            valid: findings
+                .iter()
+                .all(|f| !matches!(f.severity, Severity::High | Severity::Critical)),
+            findings,
+            attestations: vec![att],
+        })
     }
 }
 
-pub struct AnomalyAgent<L: Llm + ?Sized> { pub llm: Arc<L> }
+pub struct AnomalyAgent<L: Llm + ?Sized> {
+    pub llm: Arc<L>,
+}
 
 impl<L: Llm + ?Sized> AnomalyAgent<L> {
     pub async fn run(&self, attestations: &[CustodianAttestation]) -> Result<AnomalyResponse> {
         let input = serde_json::to_string(attestations)?;
         let system = r#"You are an RWA anomaly analyst. Review structured custodian attestations. Return JSON {"findings":[...]}. Flag suspicious jumps, mismatched asset IDs/units, stale dates, duplicate account references, or inconsistent custodian history visible in the supplied records. Do not declare physical truth."#;
-        Ok(serde_json::from_value(self.llm.complete_json(system, &input).await?)?)
+        Ok(serde_json::from_value(
+            self.llm.complete_json(system, &input).await?,
+        )?)
     }
 }
 
-pub fn reconcile(job: &ReserveJob, evidence: &[EvidenceResult], freshness_cutoff: DateTime<Utc>) -> Result<Reconciliation> {
+pub fn reconcile(
+    job: &ReserveJob,
+    evidence: &[EvidenceResult],
+    freshness_cutoff: DateTime<Utc>,
+) -> Result<Reconciliation> {
     let mut selected = Vec::new();
     let mut total = 0.0_f64;
     let mut findings = Vec::new();
     let mut asset_match = true;
     for result in evidence {
-        if !result.valid { continue; }
+        if !result.valid {
+            continue;
+        }
         for att in &result.attestations {
             if att.asset_id != job.asset_id || att.unit != job.unit {
                 asset_match = false;
                 findings.push(RiskFinding {
                     severity: Severity::High,
                     category: "asset_or_unit_mismatch".into(),
-                    explanation: format!("Attestation {} does not match job asset/unit.", att.attestation_id),
+                    explanation: format!(
+                        "Attestation {} does not match job asset/unit.",
+                        att.attestation_id
+                    ),
                     evidence_ids: vec![att.attestation_id],
                 });
                 continue;
@@ -119,19 +190,24 @@ pub fn reconcile(job: &ReserveJob, evidence: &[EvidenceResult], freshness_cutoff
                 findings.push(RiskFinding {
                     severity: Severity::High,
                     category: "stale_attestation".into(),
-                    explanation: format!("Attestation {} is older than the proof time bound.", att.attestation_id),
+                    explanation: format!(
+                        "Attestation {} is older than the proof time bound.",
+                        att.attestation_id
+                    ),
                     evidence_ids: vec![att.attestation_id],
                 });
                 continue;
             }
             let q = parse_decimal(&att.quantity).map_err(anyhow::Error::msg)?;
-            if !q.is_finite() || q < 0.0 { bail!("invalid reserve quantity for {}", att.attestation_id); }
+            if !q.is_finite() || q < 0.0 {
+                bail!("invalid reserve quantity for {}", att.attestation_id);
+            }
             total += q;
             selected.push(att.attestation_id);
         }
     }
     let supply = parse_decimal(&job.token_supply).map_err(anyhow::Error::msg)?;
-    let agreement = selected.len() > 0 && asset_match;
+    let agreement = !selected.is_empty() && asset_match;
     Ok(Reconciliation {
         asset_id: job.asset_id.clone(),
         total_quantity: total.to_string(),
@@ -143,23 +219,51 @@ pub fn reconcile(job: &ReserveJob, evidence: &[EvidenceResult], freshness_cutoff
     })
 }
 
-pub fn build_witness(job: &ReserveJob, evidence: &[EvidenceResult], freshness_cutoff: DateTime<Utc>) -> Result<ReserveWitnessInput> {
+pub fn build_witness(
+    job: &ReserveJob,
+    evidence: &[EvidenceResult],
+    freshness_cutoff: DateTime<Utc>,
+) -> Result<ReserveWitnessInput> {
     let mut quantities = Vec::new();
     let mut account_refs = Vec::new();
     let mut ids = Vec::new();
     for result in evidence {
         for att in &result.attestations {
-            if att.asset_id == job.asset_id && att.unit == job.unit && att.as_of >= freshness_cutoff && result.valid {
+            if att.asset_id == job.asset_id
+                && att.unit == job.unit
+                && att.as_of >= freshness_cutoff
+                && result.valid
+            {
                 quantities.push(att.quantity.clone());
                 account_refs.push(att.account_ref.clone());
                 ids.push(att.attestation_id);
             }
         }
     }
+    let time_bound = evidence
+        .iter()
+        .flat_map(|result| {
+            result
+                .attestations
+                .iter()
+                .map(move |att| (result.valid, att))
+        })
+        .filter(|(valid, att)| {
+            *valid
+                && att.asset_id == job.asset_id
+                && att.unit == job.unit
+                && att.as_of >= freshness_cutoff
+        })
+        .map(|(_, att)| att.as_of.timestamp())
+        .min()
+        .context("no fresh attestations are available for the witness")?;
+
     Ok(ReserveWitnessInput {
         asset_id: job.asset_id.clone(),
         token_supply: job.token_supply.clone(),
-        time_bound: freshness_cutoff.timestamp(),
+        // The contract stores this as the conservative attestation timestamp.
+        // Using the freshness cutoff here would make a new proof immediately stale.
+        time_bound,
         quantities,
         account_refs,
         attestation_ids: ids,

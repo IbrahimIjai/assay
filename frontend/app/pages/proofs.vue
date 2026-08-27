@@ -94,7 +94,7 @@
 
               <td class="whitespace-nowrap px-4 py-4">
                 <NuxtLink
-                  :to="`/asset/${round.assetId}`"
+                  :to="`/asset/${round.assetId.toLowerCase()}`"
                   class="font-data text-[13px] font-medium text-highlighted underline decoration-ink-300 underline-offset-4 hover:decoration-ink-950"
                 >
                   {{ symbolFor(round.assetId) }}
@@ -157,8 +157,7 @@
       </div>
 
       <p class="mt-5 text-[13px] leading-[1.6] text-muted">
-        Contracts are still under development — these rounds are representative
-        fixtures shaped exactly like the registry's
+        Demo mode uses representative rounds shaped exactly like the registry's
         <span class="font-data">Attestation</span> struct, so the table swaps to
         live reads without changing.
       </p>

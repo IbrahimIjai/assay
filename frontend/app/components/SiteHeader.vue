@@ -21,6 +21,7 @@
       </nav>
 
       <div class="flex items-center gap-2">
+        <WalletButton />
         <UButton
           to="/proofs"
           label="Proof explorer"
@@ -71,9 +72,10 @@ const open = ref(false)
 
 const links = [
   { label: 'Assets', to: '/#assets' },
-  { label: 'How it works', to: '/#how' },
-  { label: 'Architecture', to: '/#architecture' },
-  { label: 'Limits', to: '/#limits' }
+  { label: 'Issue', to: '/issuer/proof' },
+  { label: 'Borrow', to: '/borrow' },
+  { label: 'Lend', to: '/lend' },
+  { label: 'Operators', to: '/operator' }
 ]
 
 // A hash link on the current route does not fire a navigation, so close here too.
