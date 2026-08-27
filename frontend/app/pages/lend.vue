@@ -15,6 +15,11 @@
     </section>
 
     <UContainer class="py-12 lg:py-16">
+      <WalletBalances
+        class="mb-6"
+        :refresh-key="transactionHash"
+      />
+
       <div class="mb-6 rounded-panel bg-card p-6 ring-1 ring-default">
         <p class="mb-4 text-[14px] leading-[1.6] text-toned">
           <strong class="text-highlighted">Demo:</strong> enter 1,000, connect the deployer wallet, approve mUSDC, and supply it. The live liquidity figure increases and the wallet receives pool shares.
@@ -53,6 +58,10 @@
         <p class="mt-3 text-[13px] text-muted">
           {{ message || 'Wallet transactions use the deployed HashKey mainnet mUSDC demo pool.' }}
         </p>
+        <TransactionHashLink
+          v-if="transactionHash"
+          :hash="transactionHash"
+        />
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -148,6 +157,7 @@ const debt = ref(0n)
 const utilisation = ref(0n)
 const pending = ref(false)
 const message = ref('')
+const transactionHash = ref<`0x${string}` | ''>('')
 const { ensureWallet, waitForReceipt, writeContract } = useAssayWallet()
 
 const metrics = computed(() => [
@@ -172,6 +182,7 @@ async function refresh() {
 async function supply() {
   pending.value = true
   message.value = ''
+  transactionHash.value = ''
   try {
     const value = parseUnits(String(amount.value), 6)
     const account = await ensureWallet()
@@ -182,6 +193,7 @@ async function supply() {
     }
     const hash = await writeContract({ address: contracts.lendingPool, abi: poolAbi, functionName: 'supply', args: [value] })
     await waitForReceipt(hash)
+    transactionHash.value = hash
     message.value = `Supplied ${amount.value} mUSDC on mainnet.`
     await refresh()
   } catch (error) {
@@ -192,11 +204,13 @@ async function supply() {
 async function withdraw() {
   pending.value = true
   message.value = ''
+  transactionHash.value = ''
   try {
     const shares = parseUnits(String(amount.value), 6)
     await ensureWallet()
     const hash = await writeContract({ address: contracts.lendingPool, abi: poolAbi, functionName: 'withdraw', args: [shares] })
     await waitForReceipt(hash)
+    transactionHash.value = hash
     message.value = `Withdrew ${amount.value} pool shares.`
     await refresh()
   } catch (error) {

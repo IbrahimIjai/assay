@@ -33,7 +33,7 @@
           name="i-lucide-info"
           class="size-4 shrink-0"
         />
-        Live agent demo — the API reads the PDFs and generates a locally verified Groth16 proof. On-chain submission is shown separately.
+        Live agent demo — upload three formatted custodian PDFs or use the bundled set. Files are processed locally, deleted after proving, and never published on-chain.
       </div>
 
       <div class="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
@@ -51,24 +51,58 @@
           </div>
 
           <div class="mt-6 rounded-panel border border-dashed border-default bg-muted/40 p-6">
-            <div class="flex items-center justify-between gap-3">
+            <input
+              ref="uploadInput"
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              class="hidden"
+              @change="selectUploadedFiles"
+            >
+            <div class="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div class="font-medium text-highlighted">
-                  Choose the bundled custodian evidence
+                  Upload three custodian statements
                 </div>
                 <div class="mt-1 text-[13px] text-muted">
-                  No manual upload is required for the video. “Healthy set” proves 4,180 kg; “Under-backed set” proves the failure path.
+                  PDF only, maximum 5 MB each. Statements must contain Asset identifier, Vault/account reference, Quantity held, and As of fields.
                 </div>
               </div>
               <div class="flex flex-wrap justify-end gap-2">
                 <UButton
-                  label="Healthy set"
+                  :label="uploadedFiles.length ? `${uploadedFiles.length} PDFs selected` : 'Choose PDFs'"
+                  size="sm"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="running"
+                  @click="openUploadPicker"
+                />
+                <UButton
+                  label="Prove uploaded PDFs"
+                  size="sm"
+                  :disabled="running || uploadedFiles.length !== 3"
+                  @click="runUploadedProof"
+                />
+              </div>
+            </div>
+            <p
+              v-if="uploadValidationError"
+              class="mt-3 text-[12px] text-failed-700"
+            >
+              {{ uploadValidationError }}
+            </p>
+            <div class="my-5 border-t border-default" />
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <span class="text-[12px] uppercase tracking-[0.08em] text-muted">Or use bundled demo evidence</span>
+              <div class="flex flex-wrap gap-2">
+                <UButton
+                  label="Healthy set — 4,180 kg"
                   size="sm"
                   :disabled="running"
                   @click="runDemo('healthy')"
                 />
                 <UButton
-                  label="Under-backed set"
+                  label="Under-backed set — 3,600 kg"
                   color="neutral"
                   variant="outline"
                   size="sm"
@@ -195,7 +229,7 @@
               <span class="text-[13px] text-muted">Coverage</span>
               <span
                 class="font-data text-[15px]"
-                :class="scenario === 'healthy' ? 'text-covered-700' : 'text-failed-700'"
+                :class="coverageKnown ? (isCovered ? 'text-covered-700' : 'text-failed-700') : 'text-muted'"
               >
                 {{ coverageLabel }}
               </span>
@@ -233,9 +267,9 @@
               </dt>
               <dd
                 class="font-data"
-                :class="scenario === 'healthy' ? 'text-covered-700' : 'text-failed-700'"
+                :class="coverageKnown ? (isCovered ? 'text-covered-700' : 'text-failed-700') : 'text-muted'"
               >
-                {{ scenario === 'healthy' ? 'TRUE' : 'FALSE' }}
+                {{ publicCoverageLabel }}
               </dd>
             </div>
             <div class="flex items-center justify-between gap-4 border-b border-default pb-2.5">
@@ -243,15 +277,15 @@
                 As-of
               </dt>
               <dd class="font-data text-highlighted">
-                2026-08-27
+                {{ proofAsOf }}
               </dd>
             </div>
             <div class="flex items-center justify-between gap-4 border-b border-default pb-2.5">
               <dt class="text-muted">
-                Proof hash
+                Submission
               </dt>
               <dd class="font-data text-highlighted">
-                {{ currentStage >= 5 ? '0x2fa7c31d…' : 'Pending' }}
+                {{ submissionLabel }}
               </dd>
             </div>
             <div class="flex items-center justify-between gap-4">
@@ -259,7 +293,7 @@
                 Custodian root
               </dt>
               <dd class="font-data text-highlighted">
-                0xAF9D…5F1A
+                {{ custodianRootLabel }}
               </dd>
             </div>
           </dl>
@@ -276,12 +310,12 @@
               What stays off-chain
             </h3>
             <ul class="mt-5 space-y-3 text-[14px] leading-[1.6] text-toned">
-              <li>Custodian A: 1,850 kg</li>
-              <li>Custodian B: 920 kg</li>
-              <li>Custodian C: {{ scenario === 'healthy' ? '1,410' : '830' }} kg</li>
-              <li>Account refs: PRIVATE</li>
-              <li>Signatures: PRIVATE</li>
-              <li>Source PDFs: PRIVATE</li>
+              <li
+                v-for="item in privateEvidence"
+                :key="item"
+              >
+                {{ item }}
+              </li>
             </ul>
           </div>
 
@@ -296,11 +330,11 @@
             </p>
             <div
               class="mt-5 rounded-panel p-4 ring-1"
-              :class="scenario === 'healthy' ? 'bg-covered-50 ring-covered-200' : 'bg-failed-50 ring-failed-200'"
+              :class="coverageKnown && isCovered ? 'bg-covered-50 ring-covered-200' : coverageKnown ? 'bg-failed-50 ring-failed-200' : 'bg-muted ring-default'"
             >
               <div
                 class="font-data text-[13px]"
-                :class="scenario === 'healthy' ? 'text-covered-700' : 'text-failed-700'"
+                :class="coverageKnown && isCovered ? 'text-covered-700' : coverageKnown ? 'text-failed-700' : 'text-muted'"
               >
                 Agent result
               </div>
@@ -308,7 +342,7 @@
                 {{ currentStage >= 6 ? (submitted ? 'Proof accepted on-chain' : 'Proof verified locally') : 'Not generated' }}
               </div>
               <div
-                v-if="currentStage >= 6 && scenario === 'failed'"
+                v-if="currentStage >= 6 && coverageKnown && !isCovered"
                 class="mt-3 font-data text-[12px] text-failed-700"
               >
                 AssayCompliance.ReserveNotCovered()
@@ -323,8 +357,8 @@
             <UButton
               v-if="currentStage >= 6"
               class="mt-4"
-              :to="`/issuer/mint?state=${scenario}`"
-              :label="scenario === 'healthy' ? 'Continue to mint' : 'Try blocked mint'"
+              :to="`/issuer/mint?state=${isCovered ? 'healthy' : 'failed'}`"
+              :label="isCovered ? 'Continue to mint' : 'Try blocked mint'"
               size="sm"
             />
           </div>
@@ -335,6 +369,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatUnits } from 'viem'
 import { agentApiUrl } from '~/utils/contracts'
 
 const stages = [
@@ -348,53 +383,193 @@ const stages = [
 ]
 
 type Scenario = 'healthy' | 'failed'
+interface ProofSummary {
+  assetId: string
+  custodianRoot: `0x${string}`
+  tokenSupply: string
+  reserveQuantity: string
+  covered: boolean
+  timeBound: string
+  locallyVerified: boolean
+  transactionHash?: `0x${string}`
+  blockNumber?: string
+}
+
+interface ProofResponse {
+  ok: boolean
+  submitted: boolean
+  proof?: ProofSummary
+}
+
 const scenario = ref<Scenario>('healthy')
 const currentStage = ref(-1)
 const running = ref(false)
 const submitted = ref(false)
 const agentError = ref('')
+const uploadInput = ref<HTMLInputElement | null>(null)
+const uploadedFiles = ref<File[]>([])
+const uploadedMode = ref(false)
+const uploadValidationError = ref('')
+const proofSummary = ref<ProofSummary | null>(null)
 
-const documents = computed(() => [
-  { title: 'Custodian Statement A', file: 'custodian_a_healthy.pdf', asset: 'SILVER-001', quantity: '1,850 kg', asOf: 'Aug 27, 2026', account: 'VAULT-001', confidence: '99%' },
-  { title: 'Custodian Statement B', file: 'custodian_b_healthy.pdf', asset: 'SILVER-001', quantity: '920 kg', asOf: 'Aug 27, 2026', account: 'VAULT-002', confidence: '99%' },
-  { title: 'Custodian Statement C', file: scenario.value === 'healthy' ? 'custodian_c_healthy.pdf' : 'custodian_c_underbacked.pdf', asset: 'SILVER-001', quantity: scenario.value === 'healthy' ? '1,410 kg' : '830 kg', asOf: 'Aug 27, 2026', account: 'VAULT-003', confidence: '98%' }
-])
+const documents = computed(() => uploadedMode.value
+  ? uploadedFiles.value.map((file, index) => ({
+      title: `Uploaded Statement ${String.fromCharCode(65 + index)}`,
+      file: file.name,
+      asset: currentStage.value >= 1 ? 'SILVER-001' : 'Pending',
+      quantity: currentStage.value >= 3 ? 'Private input' : 'Pending',
+      asOf: currentStage.value >= 1 ? 'Extracted privately' : 'Pending',
+      account: currentStage.value >= 1 ? 'PRIVATE' : 'Pending',
+      confidence: currentStage.value >= 1 ? 'Validated' : 'Pending'
+    }))
+  : [
+      { title: 'Custodian Statement A', file: 'custodian_a_healthy.pdf', asset: 'SILVER-001', quantity: '1,850 kg', asOf: 'Aug 27, 2026', account: 'VAULT-001', confidence: '99%' },
+      { title: 'Custodian Statement B', file: 'custodian_b_healthy.pdf', asset: 'SILVER-001', quantity: '920 kg', asOf: 'Aug 27, 2026', account: 'VAULT-002', confidence: '99%' },
+      { title: 'Custodian Statement C', file: scenario.value === 'healthy' ? 'custodian_c_healthy.pdf' : 'custodian_c_underbacked.pdf', asset: 'SILVER-001', quantity: scenario.value === 'healthy' ? '1,410 kg' : '830 kg', asOf: 'Aug 27, 2026', account: 'VAULT-003', confidence: '98%' }
+    ])
+
+const coverageKnown = computed(() => !uploadedMode.value || Boolean(proofSummary.value))
+const isCovered = computed(() => uploadedMode.value
+  ? proofSummary.value?.covered === true
+  : scenario.value === 'healthy')
+const reserveQuantity = computed(() => proofSummary.value
+  ? formatUnits(BigInt(proofSummary.value.reserveQuantity), 18)
+  : scenario.value === 'healthy' ? '4180' : '3600')
 
 const findings = computed(() => [
-  'Account IDs and signatures match the registered custodian set.',
-  scenario.value === 'healthy'
-    ? 'The attested quantities produce 4,180 kg of proven reserve coverage.'
-    : 'The attested quantities total 3,600 kg and do not cover 4,000 kg supply.',
+  uploadedMode.value ? 'Three uploaded PDFs passed local file validation.' : 'Account IDs and signatures match the registered custodian set.',
+  coverageKnown.value
+    ? `The agent reconciled ${Number(reserveQuantity.value).toLocaleString()} kg against the 4,000 kg issuance cap.`
+    : 'The agent will extract and reconcile quantities without publishing the documents.',
   'No holder identity leaks are exposed outside the witness circuit.'
 ])
 
-const equation = computed(() => scenario.value === 'healthy'
-  ? '1,850 + 920 + 1,410 = 4,180 kg'
-  : '1,850 + 920 + 830 = 3,600 kg')
+const equation = computed(() => uploadedMode.value
+  ? proofSummary.value ? `${Number(reserveQuantity.value).toLocaleString()} kg total; individual balances private` : 'Pending private extraction'
+  : scenario.value === 'healthy' ? '1,850 + 920 + 1,410 = 4,180 kg' : '1,850 + 920 + 830 = 3,600 kg')
 
-const coverageLabel = computed(() => scenario.value === 'healthy' ? '104.5% ✓' : '90.0% FAILED')
+const coverageLabel = computed(() => {
+  if (!coverageKnown.value) return 'PENDING'
+  const ratio = (Number(reserveQuantity.value) / 4000) * 100
+  return `${ratio.toFixed(1)}% ${isCovered.value ? '✓' : 'FAILED'}`
+})
+const publicCoverageLabel = computed(() => coverageKnown.value ? (isCovered.value ? 'TRUE' : 'FALSE') : 'PENDING')
+const proofAsOf = computed(() => proofSummary.value
+  ? new Date(Number(proofSummary.value.timeBound) * 1000).toISOString().slice(0, 10)
+  : 'Pending')
+const submissionLabel = computed(() => {
+  if (currentStage.value < 5) return 'Pending'
+  if (proofSummary.value?.transactionHash) return `${proofSummary.value.transactionHash.slice(0, 10)}…`
+  return proofSummary.value?.locallyVerified ? 'Verified locally' : 'Generating'
+})
+const custodianRootLabel = computed(() => proofSummary.value
+  ? `${proofSummary.value.custodianRoot.slice(0, 8)}…${proofSummary.value.custodianRoot.slice(-6)}`
+  : 'Pending')
+const privateEvidence = computed(() => uploadedMode.value
+  ? [
+      'Individual custodian quantities: PRIVATE',
+      'Account references: PRIVATE',
+      'Signatures: PRIVATE',
+      'Uploaded source PDFs: TEMPORARY, THEN DELETED'
+    ]
+  : [
+      'Custodian A: 1,850 kg',
+      'Custodian B: 920 kg',
+      `Custodian C: ${scenario.value === 'healthy' ? '1,410' : '830'} kg`,
+      'Account refs: PRIVATE',
+      'Signatures: PRIVATE',
+      'Source PDFs: PRIVATE'
+    ])
+
+function openUploadPicker() {
+  uploadInput.value?.click()
+}
+
+function selectUploadedFiles(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  uploadValidationError.value = ''
+  if (files.length !== 3) {
+    uploadedFiles.value = []
+    uploadValidationError.value = `Select exactly three PDFs; you selected ${files.length}.`
+    return
+  }
+  const invalid = files.find(file => !file.name.toLowerCase().endsWith('.pdf') || file.size === 0 || file.size > 5 * 1024 * 1024)
+  if (invalid) {
+    uploadedFiles.value = []
+    uploadValidationError.value = `${invalid.name} must be a non-empty PDF no larger than 5 MB.`
+    return
+  }
+  uploadedFiles.value = files
+  uploadedMode.value = true
+  proofSummary.value = null
+  currentStage.value = -1
+  submitted.value = false
+  agentError.value = ''
+}
+
+async function finishProof(request: Promise<ProofResponse>) {
+  for (let index = 1; index < stages.length - 1; index++) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    currentStage.value = index
+  }
+  const response = await request
+  if (!response.proof?.locallyVerified) {
+    if (response.submitted) {
+      submitted.value = true
+      currentStage.value = stages.length - 1
+      return
+    }
+    throw new Error('The agent did not return a locally verified proof summary.')
+  }
+  proofSummary.value = response.proof
+  scenario.value = response.proof.covered ? 'healthy' : 'failed'
+  submitted.value = response.submitted
+  currentStage.value = stages.length - 1
+}
+
+async function runUploadedProof() {
+  if (running.value || uploadedFiles.value.length !== 3) return
+  uploadedMode.value = true
+  proofSummary.value = null
+  currentStage.value = 0
+  running.value = true
+  submitted.value = false
+  agentError.value = ''
+  const form = new FormData()
+  for (const file of uploadedFiles.value) form.append('documents', file, file.name)
+  try {
+    await finishProof($fetch<ProofResponse>(`${agentApiUrl}/proof/upload`, {
+      method: 'POST',
+      body: form
+    }))
+  } catch (error) {
+    const apiError = (error as { data?: { error?: string } }).data?.error
+    agentError.value = apiError || (error instanceof Error ? error.message : 'The agent API could not process the uploaded PDFs.')
+    currentStage.value = Math.min(currentStage.value, 4)
+  } finally {
+    running.value = false
+  }
+}
 
 async function runDemo(next: Scenario) {
   if (running.value) return
+  uploadedMode.value = false
   scenario.value = next
+  proofSummary.value = null
   currentStage.value = 0
   running.value = true
   submitted.value = false
   agentError.value = ''
   try {
-    const request = $fetch<{ ok: boolean, submitted: boolean }>(`${agentApiUrl}/demo/proof`, {
+    await finishProof($fetch<ProofResponse>(`${agentApiUrl}/demo/proof`, {
       method: 'POST',
       body: { scenario: next }
-    })
-    for (let index = 1; index < stages.length; index++) {
-      await new Promise(resolve => setTimeout(resolve, 600))
-      currentStage.value = index
-    }
-    const response = await request
-    submitted.value = response.submitted
+    }))
   } catch (error) {
-    agentError.value = error instanceof Error ? error.message : 'The agent API could not generate the proof.'
-    currentStage.value = 4
+    const apiError = (error as { data?: { error?: string } }).data?.error
+    agentError.value = apiError || (error instanceof Error ? error.message : 'The agent API could not generate the proof.')
+    currentStage.value = Math.min(currentStage.value, 4)
   } finally {
     running.value = false
   }

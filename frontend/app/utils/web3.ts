@@ -17,6 +17,7 @@ export const hashKeyChain = defineChain({
 export const publicClient = createPublicClient({ chain: hashKeyChain, transport: http() })
 
 export const reserveRegistryAbi = parseAbi([
+  'event ProofAccepted(bytes32 indexed asset, bool covered, uint64 indexed asOf, uint256 supplyAtProof, bytes32 proofHash)',
   'function getLatest(bytes32 asset) view returns ((bool covered,uint64 asOf,uint256 supplyAtProof,bytes32 proofHash))',
   'function isFresh(bytes32 asset) view returns (bool)',
   'function coverageStatus(bytes32 asset) view returns (uint8)',
@@ -43,6 +44,8 @@ export const poolAbi = parseAbi([
 ])
 
 export const vaultAbi = parseAbi([
+  'function notes(bytes32 commitment) view returns (bytes32 asset,address owner,uint256 amount,bool locked)',
+  'function loans(bytes32 loanId) view returns (bytes32 asset,bytes32 noteCommitment,address borrower,uint256 collateralAmount,uint256 debt,uint64 maturity,bool repaid,bool auctioned)',
   'function deposit(bytes32 asset,uint256 amount,bytes32 noteCommitment)',
   'function borrow(bytes32 asset,uint256[2] a,uint256[2][2] b,uint256[2] c,uint256[7] publicInputs,address stealthPayout,uint64 maturity) returns (bytes32)',
   'function repay(bytes32 loanId,uint256 amount)'

@@ -24,6 +24,7 @@ export const contracts = {
 } as const
 
 export const silverAssetId = '0x1e2beb6209b621770c89114d80ffa4af61136b35c73124168277baf83e2fa5d3'
+export const reserveRegistryDeploymentBlock = 26746510n
 export const agentApiUrl = import.meta.env.VITE_AGENT_API_URL || 'http://localhost:3001'
 export const deploymentReady = Object.values(contracts).every(address => address !== zeroAddress)
 

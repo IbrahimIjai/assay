@@ -16,7 +16,7 @@ export ASSAY_CONTRACTS_DIR="$CONTRACTS_ROOT"
 export HASHKEY_RPC_URL="https://mainnet.hsk.xyz"
 export RESERVE_REGISTRY_ADDRESS="0xBe9ec79854e459F38E0B868A0c3429AAbf6784b2"
 export ASSAY_ENABLE_SUBMISSION="true"
-export ASSAY_API_ADDR="0.0.0.0:3001"
+export ASSAY_API_ADDR="127.0.0.1:3001"
 
 cd "$AGENT_ROOT"
 cargo build --workspace

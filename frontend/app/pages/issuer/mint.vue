@@ -36,6 +36,11 @@
         HashKey mainnet — this page reads ReserveRegistry and sends a real wallet transaction.
       </div>
 
+      <WalletBalances
+        class="mb-6"
+        :refresh-key="transactionHash"
+      />
+
       <div class="mb-6 grid gap-3 sm:grid-cols-3">
         <div class="rounded-panel bg-card p-4 ring-1 ring-default">
           <span class="font-data text-[12px] text-muted">01</span>
@@ -144,6 +149,10 @@
             >
               AssayCompliance.ReserveNotCovered()
             </div>
+            <TransactionHashLink
+              v-if="transactionState === 'confirmed' && transactionHash"
+              :hash="transactionHash"
+            />
           </div>
         </div>
 
@@ -209,6 +218,7 @@ type TransactionState = 'idle' | 'pending' | 'confirmed' | 'reverted'
 const mintAmount = ref(1000)
 const transactionState = ref<TransactionState>('idle')
 const transactionError = ref('')
+const transactionHash = ref<`0x${string}` | ''>('')
 const totalSupply = ref(0n)
 const attestation = ref({ covered: false, asOf: 0n, supplyAtProof: 0n, proofHash: '0x' })
 const fresh = ref(false)
@@ -253,6 +263,7 @@ async function refresh() {
 async function attemptMint() {
   transactionState.value = 'pending'
   transactionError.value = ''
+  transactionHash.value = ''
   try {
     const account = await ensureWallet()
     const hash = await writeContract({
@@ -262,6 +273,7 @@ async function attemptMint() {
       args: [account, requestedAmount.value]
     })
     await waitForReceipt(hash)
+    transactionHash.value = hash
     transactionState.value = 'confirmed'
     await refresh()
   } catch (error) {
