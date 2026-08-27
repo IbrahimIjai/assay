@@ -15,19 +15,19 @@ template MerklePath(DEPTH) {
 
     component h[DEPTH];
     signal current[DEPTH + 1];
+    signal left[DEPTH];
+    signal right[DEPTH];
     current[0] <== leaf;
 
     for (var i = 0; i < DEPTH; i++) {
         pathIndices[i] * (1 - pathIndices[i]) === 0;
         // pathIndices = 0 => current is left; 1 => current is right.
-        signal left;
-        signal right;
-        left <== current[i] + pathIndices[i] * (pathElements[i] - current[i]);
-        right <== pathElements[i] + pathIndices[i] * (current[i] - pathElements[i]);
+        left[i] <== current[i] + pathIndices[i] * (pathElements[i] - current[i]);
+        right[i] <== pathElements[i] + pathIndices[i] * (current[i] - pathElements[i]);
 
         h[i] = Poseidon(2);
-        h[i].inputs[0] <== left;
-        h[i].inputs[1] <== right;
+        h[i].inputs[0] <== left[i];
+        h[i].inputs[1] <== right[i];
         current[i + 1] <== h[i].out;
     }
 

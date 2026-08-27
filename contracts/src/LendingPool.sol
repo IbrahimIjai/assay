@@ -51,7 +51,7 @@ contract LendingPool is ReentrancyGuard, Ownable {
     }
 
     function recordDebt(bytes32 rwaAsset, uint256 amount) external onlyOwner {
-        ReserveRegistry.Attestation memory a = reserves.latest(rwaAsset);
+        ReserveRegistry.Attestation memory a = reserves.getLatest(rwaAsset);
         if (!a.covered || !reserves.isFresh(rwaAsset)) revert InsufficientLiquidity();
         totalDebt += amount;
         emit DebtRecorded(rwaAsset, amount);
@@ -68,7 +68,7 @@ contract LendingPool is ReentrancyGuard, Ownable {
     }
 
     function maxLTV(bytes32 rwaAsset) external view returns (uint256) {
-        ReserveRegistry.Attestation memory a = reserves.latest(rwaAsset);
+        ReserveRegistry.Attestation memory a = reserves.getLatest(rwaAsset);
         if (!a.covered || !reserves.isFresh(rwaAsset)) return 0;
         return 7000; // 70.00% demo cap; production should be governance/oracle driven.
     }

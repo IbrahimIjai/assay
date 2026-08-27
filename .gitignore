@@ -1,0 +1,69 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node / frontend tooling
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/dist/
+frontend/.cache/
+frontend/.vite/
+frontend/.vercel/
+frontend/.netlify/
+frontend/.env
+frontend/.env.*
+
+# Agent workspace local state
+agent/.env
+agent/.env.*
+agent/.venv/
+agent/venv/
+agent/.mypy_cache/
+agent/.pytest_cache/
+agent/__pycache__/
+agent/.cache/
+agent/.tmp/
+agent/.logs/
+agent/.coverage
+agent/coverage/
+agent/.ruff_cache/
+agent/.ipynb_checkpoints/
+
+# Contract / Solidity / tooling artifacts
+contracts/node_modules/
+contracts/cache/
+contracts/artifacts/
+contracts/build/
+contracts/typechain/
+contracts/.env
+contracts/.env.*
+contracts/coverage/
+contracts/coverage.json
+contracts/*.log
+
+# Common build outputs
+build/
+dist/
+out/
+coverage/
+**/target/
+*.log
+
+# Local secrets
+.env
+.env.*
+
+# Project docs kept local to this workspace
+agent.md
+frontend.md
+project.md
+
+# Misc generated files
+*.tmp
+*.bak

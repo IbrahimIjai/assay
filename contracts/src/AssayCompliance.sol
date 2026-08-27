@@ -34,10 +34,10 @@ contract AssayCompliance is Ownable, ICompliance {
     function created(address, uint256) external view override {
         if (msg.sender != token) revert NotToken();
         if (!reserves.isFresh(asset)) revert ReserveNotFresh();
-        if (!reserves.latest(asset).covered) revert ReserveNotCovered();
+        if (!reserves.getLatest(asset).covered) revert ReserveNotCovered();
     }
 
     function canTransfer(address, address, uint256) external view override returns (bool) {
-        return reserves.isFresh(asset) && reserves.latest(asset).covered;
+        return reserves.isFresh(asset) && reserves.getLatest(asset).covered;
     }
 }

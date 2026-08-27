@@ -101,6 +101,10 @@ contract ReserveRegistry is Ownable {
         return block.timestamp - a.asOf <= maxAge;
     }
 
+    function getLatest(bytes32 asset) external view returns (Attestation memory) {
+        return latest[asset];
+    }
+
     function coverageStatus(bytes32 asset) external view returns (uint8) {
         Attestation memory a = latest[asset];
         if (!isFresh(asset)) return 1;
