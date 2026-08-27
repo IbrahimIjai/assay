@@ -2,7 +2,7 @@ use anyhow::{bail, Context, Result};
 use assay_core::{parse_decimal, CustodianAttestation, DocumentRef, EvidenceResult, Reconciliation, ReserveJob, ReserveWitnessInput, RiskFinding, Severity};
 use assay_llm::Llm;
 use async_trait::async_trait;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{path::Path, sync::Arc};
