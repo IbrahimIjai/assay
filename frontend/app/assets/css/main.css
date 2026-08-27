@@ -1,0 +1,201 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/*
+  Assay Protocol design tokens.
+
+  Structural DNA is borrowed from serviceblocks.biz — oversized display type on
+  a near-white ground, chip tags, a solid stat band, near-black contrast
+  sections, generous radii. The palette is not: an agency site can spend colour
+  freely, a proving system cannot. Here colour carries exactly one meaning —
+  coverage state — and everything else is a neutral ink ramp. If something on
+  screen is green, orange or red, it is telling you about a proof.
+*/
+
+@theme static {
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'General Sans', 'Manrope', ui-sans-serif, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Neutral ink ramp. Cool, not warm — silver rather than paper. */
+  --color-ink-50: #f7f7fa;
+  --color-ink-100: #eeeff3;
+  --color-ink-200: #dfe1e7;
+  --color-ink-300: #c6c9d2;
+  --color-ink-400: #9da2af;
+  --color-ink-500: #707684;
+  --color-ink-600: #4e5461;
+  --color-ink-700: #363b45;
+  --color-ink-800: #22262e;
+  --color-ink-900: #16181d;
+  --color-ink-950: #0f1115;
+
+  /* Coverage: proven, reserves >= supply, attestation fresh. */
+  --color-covered-50: #ecfaf2;
+  --color-covered-100: #d3f3e2;
+  --color-covered-200: #a8e7c6;
+  --color-covered-300: #74d6a5;
+  --color-covered-400: #43bf83;
+  --color-covered-500: #1f9d5b;
+  --color-covered-600: #17804a;
+  --color-covered-700: #14663c;
+  --color-covered-800: #135131;
+  --color-covered-900: #11432a;
+  --color-covered-950: #062517;
+
+  /* Stale: last proof is outside the freshness window. Not a failure yet. */
+  --color-stale-50: #fff6ec;
+  --color-stale-100: #ffead1;
+  --color-stale-200: #ffd1a3;
+  --color-stale-300: #feb16a;
+  --color-stale-400: #fc8c33;
+  --color-stale-500: #fa7414;
+  --color-stale-600: #ea5a08;
+  --color-stale-700: #c24309;
+  --color-stale-800: #99350f;
+  --color-stale-900: #7c2d10;
+  --color-stale-950: #431406;
+
+  /* Failed: the circuit ran and coverage did not hold. */
+  --color-failed-50: #fdf3f2;
+  --color-failed-100: #fce4e2;
+  --color-failed-200: #facecb;
+  --color-failed-300: #f5aca7;
+  --color-failed-400: #ed7d76;
+  --color-failed-500: #d9463e;
+  --color-failed-600: #c63730;
+  --color-failed-700: #a62a25;
+  --color-failed-800: #8a2622;
+  --color-failed-900: #742523;
+  --color-failed-950: #3f0e0d;
+
+  /* Named aliases used directly in templates. */
+  --color-ground: #f7f7fa;
+  --color-band: #0f1115;
+  --color-card: #ffffff;
+  --color-line: rgba(15, 17, 21, 0.10);
+  --color-line-strong: rgba(15, 17, 21, 0.18);
+
+  --radius-card: 16px;
+  --radius-panel: 24px;
+}
+
+:root {
+  --ui-bg: var(--color-ground);
+  --ui-bg-muted: #eeeff3;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-accented: #e6e8ee;
+  --ui-bg-inverted: var(--color-band);
+  --ui-text-dimmed: #9da2af;
+  --ui-text-muted: #707684;
+  --ui-text-toned: #4e5461;
+  --ui-text: #22262e;
+  --ui-text-highlighted: #0f1115;
+  --ui-text-inverted: #ffffff;
+  --ui-border: var(--color-line);
+  --ui-border-muted: rgba(15, 17, 21, 0.06);
+  --ui-border-accented: var(--color-line-strong);
+  --ui-container: 1240px;
+  --ui-radius: 10px;
+}
+
+.dark {
+  --ui-bg: var(--color-band);
+  --ui-bg-muted: #16181d;
+  --ui-bg-elevated: #1b1e25;
+  --ui-bg-accented: #22262e;
+  --ui-bg-inverted: #f7f7fa;
+  --ui-text-dimmed: #707684;
+  --ui-text-muted: #9da2af;
+  --ui-text-toned: #c6c9d2;
+  --ui-text: #eeeff3;
+  --ui-text-highlighted: #ffffff;
+  --ui-text-inverted: #0f1115;
+  --ui-border: rgba(255, 255, 255, 0.12);
+  --ui-border-muted: rgba(255, 255, 255, 0.06);
+  --ui-border-accented: rgba(255, 255, 255, 0.22);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(15, 17, 21, 0.14);
+}
+
+/*
+  Display type. The inspiration's headline is very large and very tight; at
+  that size the default tracking reads loose and marketing-ish, so the negative
+  tracking is doing most of the work.
+*/
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+
+/* Metadata, hashes, quantities. Anything that must be read character by character. */
+@utility font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Faint engineering grid behind the hero. Deliberately near-invisible. */
+@utility grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(15, 17, 21, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 17, 21, 0.035) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+@utility grid-bg-dark {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+@utility shadow-soft {
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.04), 0 12px 32px -12px rgba(15, 17, 21, 0.10);
+}
+
+/* Hero headline reveal, staggered per line via --i. Respects reduced motion. */
+@keyframes assay-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility rise {
+  animation: assay-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .rise {
+    animation: none;
+  }
+}

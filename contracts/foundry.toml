@@ -1,0 +1,19 @@
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+script = "script"
+libs = ["lib"]
+solc_version = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+fs_permissions = [{ access = "read", path = "./circuit/build" }]
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = true
+
+[rpc_endpoints]
+hsk_testnet = "${HSK_TESTNET_RPC_URL}"
